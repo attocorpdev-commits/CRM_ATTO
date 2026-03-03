@@ -70,6 +70,34 @@ export async function updateConversaEstagioAction(
   }
 }
 
+export async function reassignConversaAction(
+  conversaId: string,
+  newVendedorId: string
+): Promise<{ error?: string }> {
+  try {
+    const supabase = createServiceClient()
+
+    // Decrement old seller's counter first
+    await supabase.rpc("unassign_conversation", {
+      p_conversa_id: conversaId,
+    })
+
+    // Assign to new seller (increments their counter + sets vendedor_id)
+    const { error: rpcError } = await supabase.rpc("assign_conversation", {
+      p_conversa_id: conversaId,
+      p_vendedor_id: newVendedorId,
+    })
+
+    if (rpcError) throw rpcError
+
+    revalidatePath(`/conversas`)
+    revalidatePath(`/conversas/${conversaId}`)
+    return {}
+  } catch (err) {
+    return { error: (err as Error).message }
+  }
+}
+
 export async function updateConversaStatusAction(
   conversaId: string,
   status: "ativa" | "encerrada" | "arquivada"

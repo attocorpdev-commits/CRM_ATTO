@@ -11,7 +11,7 @@ export default async function ConversaDetailPage({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: conversa }, { data: mensagens }] = await Promise.all([
+  const [{ data: conversa }, { data: mensagens }, { data: vendedores }] = await Promise.all([
     supabase
       .from("conversas_whatsapp")
       .select("*")
@@ -23,6 +23,11 @@ export default async function ConversaDetailPage({ params }: Props) {
       .eq("conversa_id", id)
       .order("timestamp", { ascending: true })
       .limit(100),
+    supabase
+      .from("vendedores")
+      .select("id, nome")
+      .eq("status", "ativo")
+      .order("nome", { ascending: true }),
   ])
 
   if (!conversa) notFound()
@@ -37,6 +42,7 @@ export default async function ConversaDetailPage({ params }: Props) {
     <ChatInterface
       conversa={conversa}
       initialMensagens={(mensagens ?? []) as Mensagem[]}
+      vendedores={vendedores ?? []}
     />
   )
 }

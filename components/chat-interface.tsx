@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -30,6 +36,7 @@ import {
   ArrowLeft,
   Archive,
   XCircle,
+  UserRoundPlus,
 } from "lucide-react"
 import { cn, formatRelativeTime } from "@/lib/utils"
 import { toast } from "sonner"
@@ -38,6 +45,7 @@ import {
   sendMessageAction,
   updateConversaEstagioAction,
   updateConversaStatusAction,
+  reassignConversaAction,
 } from "@/app/(dashboard)/conversas/[id]/actions"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
@@ -61,10 +69,14 @@ const STAGE_OPTIONS = [
 interface ChatInterfaceProps {
   conversa: Conversa
   initialMensagens: Mensagem[]
+  vendedores: { id: string; nome: string }[]
 }
 
-export function ChatInterface({ conversa, initialMensagens }: ChatInterfaceProps) {
+export function ChatInterface({ conversa, initialMensagens, vendedores }: ChatInterfaceProps) {
   const [currentConversa, setCurrentConversa] = useState(conversa)
+  const [transferOpen, setTransferOpen]       = useState(false)
+  const [selectedVendedor, setSelectedVendedor] = useState("")
+  const [transferring, setTransferring]       = useState(false)
   const router                                 = useRouter()
 
   const {
@@ -112,6 +124,25 @@ export function ChatInterface({ conversa, initialMensagens }: ChatInterfaceProps
       router.push("/conversas")
     }
   }
+
+  async function handleTransfer() {
+    if (!selectedVendedor) return
+    setTransferring(true)
+    const result = await reassignConversaAction(conversa.id, selectedVendedor)
+    setTransferring(false)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Conversa transferida")
+      setTransferOpen(false)
+      setSelectedVendedor("")
+      router.refresh()
+    }
+  }
+
+  const availableVendedores = vendedores.filter(
+    (v) => v.id !== currentConversa.vendedor_id
+  )
 
   const initials = (currentConversa.nome_cliente ?? currentConversa.numero_cliente)
     .split(" ")
@@ -181,6 +212,13 @@ export function ChatInterface({ conversa, initialMensagens }: ChatInterfaceProps
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={(e) => { e.preventDefault(); setTransferOpen(true) }}
+              disabled={isArchived || isClosed}
+            >
+              <UserRoundPlus className="h-4 w-4 mr-2" />
+              Transferir conversa
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleArchive} disabled={isArchived}>
               <Archive className="h-4 w-4 mr-2" />
               Arquivar conversa
@@ -196,6 +234,36 @@ export function ChatInterface({ conversa, initialMensagens }: ChatInterfaceProps
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Transfer dialog */}
+      <Dialog open={transferOpen} onOpenChange={(open) => { setTransferOpen(open); if (!open) setSelectedVendedor("") }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transferir conversa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Select value={selectedVendedor} onValueChange={setSelectedVendedor}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um vendedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableVendedores.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleTransfer}
+              disabled={!selectedVendedor || transferring}
+              className="w-full"
+            >
+              {transferring ? "Transferindo..." : "Transferir"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
