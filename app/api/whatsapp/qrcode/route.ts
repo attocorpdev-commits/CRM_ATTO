@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { createEvolutionClient } from "@/lib/whatsapp/evolution-api"
+import { createEvolutionClientFromConfig } from "@/lib/whatsapp/evolution-api"
 import { isAdminOrAbove } from "@/lib/roles"
 
 export async function GET() {
@@ -22,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const evolution = createEvolutionClient()
+    const evolution = await createEvolutionClientFromConfig()
     const result    = await evolution.fetchQRCode()
 
     // When instance is already connected, Evolution API returns { instance: { state: "open" } }

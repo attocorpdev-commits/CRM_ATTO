@@ -162,6 +162,17 @@ export class EvolutionApiClient {
   }
 
   /**
+   * Create a new instance in the Evolution API server.
+   */
+  async createInstance(instanceName: string) {
+    return this.request("POST", `/instance/create`, {
+      instanceName,
+      integration: "WHATSAPP-BAILEYS",
+      qrcode: true,
+    })
+  }
+
+  /**
    * Disconnect this instance from WhatsApp.
    */
   async logout() {
@@ -206,6 +217,7 @@ export class EvolutionApiClient {
 /**
  * Factory that creates an EvolutionApiClient from environment variables.
  * Server-side only — uses env vars that are not exposed to the browser.
+ * Kept as fallback for contexts where DB config is not available (e.g. webhook).
  */
 export function createEvolutionClient(): EvolutionApiClient {
   if (!process.env.EVOLUTION_API_URL) throw new Error("EVOLUTION_API_URL not set")
@@ -217,4 +229,31 @@ export function createEvolutionClient(): EvolutionApiClient {
     process.env.EVOLUTION_API_KEY,
     process.env.EVOLUTION_INSTANCE_NAME
   )
+}
+
+/**
+ * Factory that creates an EvolutionApiClient from the database config.
+ * Reads `configuracoes_whatsapp` table using the service role client.
+ * Falls back to env vars if no config exists in DB.
+ */
+export async function createEvolutionClientFromConfig(): Promise<EvolutionApiClient> {
+  const { createServiceClient } = await import("@/lib/supabase/server")
+  const supabase = createServiceClient()
+
+  const { data: config } = await supabase
+    .from("configuracoes_whatsapp")
+    .select("evolution_api_url, evolution_api_key, instance_name")
+    .limit(1)
+    .single()
+
+  if (config?.evolution_api_url && config?.evolution_api_key && config?.instance_name) {
+    return new EvolutionApiClient(
+      config.evolution_api_url,
+      config.evolution_api_key,
+      config.instance_name
+    )
+  }
+
+  // Fallback to env vars
+  return createEvolutionClient()
 }

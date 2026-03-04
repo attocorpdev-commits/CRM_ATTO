@@ -2,7 +2,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server"
 import { createClient } from "@/lib/supabase/server"
-import { createEvolutionClient } from "@/lib/whatsapp/evolution-api"
+import { createEvolutionClientFromConfig } from "@/lib/whatsapp/evolution-api"
 import { revalidatePath } from "next/cache"
 
 export async function sendMessageAction(
@@ -13,7 +13,7 @@ export async function sendMessageAction(
   if (!text.trim()) return { error: "Mensagem não pode ser vazia" }
 
   try {
-    const evolution = createEvolutionClient()
+    const evolution = await createEvolutionClientFromConfig()
     const supabase  = createServiceClient()
 
     // Send via Evolution API

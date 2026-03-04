@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server"
 import { distributeConversation } from "@/lib/distribution/conversation-distributor"
 import { formatPhoneNumber, isGroupJid } from "@/lib/utils"
 import {
-  createEvolutionClient,
+  EvolutionApiClient,
   type EvolutionWebhookPayload,
 } from "@/lib/whatsapp/evolution-api"
 
@@ -56,7 +56,9 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServiceClient()
-  const evolution = createEvolutionClient()
+  // Webhook only uses extractTextContent/getMessageType — no API calls needed.
+  // Use a dummy client to avoid DB lookup on every webhook event.
+  const evolution = new EvolutionApiClient("", "", "")
 
   // Forward to n8n webhook (fire-and-forget, never blocks CRM processing)
   const { data: configRow } = await supabase

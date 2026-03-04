@@ -73,11 +73,21 @@ export function ConfigForm({ config }: ConfigFormProps) {
         <p className="text-sm text-destructive">{state.error}</p>
       )}
       {state?.success && (
-        <p className="text-sm text-green-600">Configurações salvas com sucesso!</p>
+        <div className="space-y-1">
+          <p className="text-sm text-green-600">Configurações salvas e instância criada com sucesso!</p>
+          {state.instanceError && (
+            <p className="text-sm text-yellow-600">
+              Aviso ao criar instância: {state.instanceError}
+            </p>
+          )}
+        </div>
       )}
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Salvando..." : "Salvar configurações"}
+        {isPending ? "Salvando e criando instância..." : "Salvar configurações"}
       </Button>
+      <p className="text-xs text-muted-foreground text-center">
+        Ao salvar, a instância será criada automaticamente na Evolution API.
+      </p>
     </form>
   )
 }

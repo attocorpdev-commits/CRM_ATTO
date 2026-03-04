@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { createEvolutionClient } from "@/lib/whatsapp/evolution-api"
+import { createEvolutionClientFromConfig } from "@/lib/whatsapp/evolution-api"
 
 export async function GET() {
   try {
@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const evolution = createEvolutionClient()
+    const evolution = await createEvolutionClientFromConfig()
     const result    = await evolution.getConnectionState()
 
     return NextResponse.json({ state: result.instance?.state ?? "unknown" })

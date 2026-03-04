@@ -49,3 +49,11 @@ export type DisparoContato       = Database["public"]["Tables"]["disparo_contato
 export type DisparoContatoInsert = Database["public"]["Tables"]["disparo_contatos"]["Insert"]
 export type DisparoStatus        = Disparo["status"]
 export type DisparoContatoStatus = DisparoContato["status"]
+
+// ============================================================
+// Listas de Contatos (saved contact lists)
+// ============================================================
+export type ListaContatos          = Database["public"]["Tables"]["listas_contatos"]["Row"]
+export type ListaContatosInsert    = Database["public"]["Tables"]["listas_contatos"]["Insert"]
+export type ListaContatoItem       = Database["public"]["Tables"]["lista_contatos_items"]["Row"]
+export type ListaContatoItemInsert = Database["public"]["Tables"]["lista_contatos_items"]["Insert"]

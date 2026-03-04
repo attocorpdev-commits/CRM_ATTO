@@ -289,6 +289,73 @@ export interface Database {
           }
         ]
       }
+      listas_contatos: {
+        Row: {
+          id: string
+          vendedor_id: string
+          nome: string
+          total_contatos: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          vendedor_id: string
+          nome: string
+          total_contatos?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          vendedor_id?: string
+          nome?: string
+          total_contatos?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listas_contatos_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "vendedores"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      lista_contatos_items: {
+        Row: {
+          id: string
+          lista_id: string
+          nome: string
+          numero: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lista_id: string
+          nome: string
+          numero: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          lista_id?: string
+          nome?: string
+          numero?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lista_contatos_items_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas_contatos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -318,6 +385,10 @@ export interface Database {
       }
       increment_disparo_falhas: {
         Args: { p_disparo_id: string }
+        Returns: undefined
+      }
+      update_lista_total: {
+        Args: { p_lista_id: string }
         Returns: undefined
       }
     }

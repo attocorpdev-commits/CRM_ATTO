@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/server"
-import { createEvolutionClient } from "@/lib/whatsapp/evolution-api"
+import { createEvolutionClientFromConfig } from "@/lib/whatsapp/evolution-api"
 
 export async function POST(req: NextRequest) {
   const { disparoId } = await req.json()
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
 async function executeBroadcast(disparoId: string) {
   const supabase = createServiceClient()
-  const evolution = createEvolutionClient()
+  const evolution = await createEvolutionClientFromConfig()
 
   // Mark as in progress
   await supabase
