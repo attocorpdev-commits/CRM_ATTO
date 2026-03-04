@@ -19,16 +19,21 @@ export function WhatsAppConnectDialog() {
   const [qrCode, setQrCode]     = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
+  const [connected, setConnected] = useState(false)
 
   const fetchQRCode = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const res  = await fetch("/api/whatsapp/qrcode")
-      const data = await res.json() as { base64?: string; error?: string }
+      const data = await res.json() as { base64?: string; error?: string; state?: string }
       if (data.error) {
         setError(data.error)
+      } else if (data.state === "open") {
+        setConnected(true)
+        setQrCode(null)
       } else {
+        setConnected(false)
         setQrCode(data.base64 ?? null)
       }
     } catch {
@@ -70,6 +75,12 @@ export function WhatsAppConnectDialog() {
         <div className="flex flex-col items-center gap-4 py-2">
           {loading ? (
             <Skeleton className="h-64 w-64 rounded-lg" />
+          ) : connected ? (
+            <div className="h-64 w-64 flex flex-col items-center justify-center gap-3 border rounded-lg text-center p-4">
+              <Wifi className="h-10 w-10 text-green-500" />
+              <p className="text-sm font-medium text-green-600">WhatsApp já está conectado!</p>
+              <p className="text-xs text-muted-foreground">A instância está ativa e funcionando.</p>
+            </div>
           ) : error ? (
             <div className="h-64 w-64 flex flex-col items-center justify-center gap-3 border rounded-lg text-center p-4">
               <p className="text-sm text-destructive">{error}</p>

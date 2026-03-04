@@ -11,24 +11,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn, formatRelativeTime } from "@/lib/utils"
+import { STAGE_LABELS, STAGE_COLORS } from "@/lib/kanban-constants"
 import { Search, MessageSquare } from "lucide-react"
 import type { ConversaComVendedor, ConversaStatus } from "@/types"
-
-const STAGE_LABELS: Record<string, string> = {
-  novo:         "Novo",
-  contatado:    "Contatado",
-  qualificado:  "Qualificado",
-  proposta:     "Proposta",
-  fechado:      "Fechado",
-}
-
-const STAGE_COLORS: Record<string, string> = {
-  novo:         "bg-blue-100 text-blue-700",
-  contatado:    "bg-yellow-100 text-yellow-700",
-  qualificado:  "bg-purple-100 text-purple-700",
-  proposta:     "bg-orange-100 text-orange-700",
-  fechado:      "bg-green-100 text-green-700",
-}
 
 type TabValue = "all" | ConversaStatus
 

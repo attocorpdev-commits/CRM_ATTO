@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import { isAdminOrAbove } from "@/lib/roles"
 import { MetricsCard } from "@/components/metrics-card"
 import {
   Card,
@@ -31,6 +33,25 @@ const STAGE_COLORS: Record<string, string> = {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+
+  // Permission check: only admin or vendedor with "dashboard" permission
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: vendedor } = await supabase
+      .from("vendedores")
+      .select("role, permissions")
+      .eq("user_id", user.id)
+      .single()
+
+    if (
+      vendedor &&
+      !isAdminOrAbove(vendedor.role) &&
+      !(vendedor.permissions as string[] | null)?.includes("dashboard")
+    ) {
+      redirect("/conversas")
+    }
+  }
+
   const todayStart = startOfDay(new Date()).toISOString()
 
   const [

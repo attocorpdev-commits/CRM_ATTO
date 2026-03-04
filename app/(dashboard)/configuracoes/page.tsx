@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { isAdminOrAbove } from "@/lib/roles"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -29,7 +30,7 @@ export default async function ConfiguracoesPage() {
     .eq("user_id", user!.id)
     .single()
 
-  if ((vendedor as { role?: string } | null)?.role !== "admin") redirect("/")
+  if (!isAdminOrAbove((vendedor as { role?: string } | null)?.role)) redirect("/")
 
   const { data: config } = await supabase
     .from("configuracoes_whatsapp")

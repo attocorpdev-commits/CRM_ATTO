@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { isAdminOrAbove } from "@/lib/roles"
-import { SellerCard } from "@/components/seller-card"
+import { AdminCard } from "@/components/admin-card"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,10 +9,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Users } from "lucide-react"
-import { CreateSellerForm } from "./create-seller-form"
+import { Plus, Shield } from "lucide-react"
+import { CreateAdminForm } from "./create-admin-form"
 
-export default async function VendedoresPage() {
+export default async function SuperadminPage() {
   const supabase = await createClient()
 
   const {
@@ -26,13 +25,14 @@ export default async function VendedoresPage() {
     .eq("user_id", user!.id)
     .single()
 
-  if (!isAdminOrAbove((currentVendedor as { role?: string } | null)?.role)) {
+  if (currentVendedor?.role !== "superadmin") {
     redirect("/")
   }
 
-  const { data: vendedores } = await supabase
+  const { data: admins } = await supabase
     .from("vendedores")
     .select("*")
+    .eq("role", "admin")
     .order("nome", { ascending: true })
 
   return (
@@ -40,39 +40,39 @@ export default async function VendedoresPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            Vendedores
+            <Shield className="h-6 w-6" />
+            Gerenciar Admins
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {vendedores?.length ?? 0} vendedor(es) cadastrado(s)
+            {admins?.length ?? 0} admin(s) cadastrado(s)
           </p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Novo vendedor
+              Novo admin
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Adicionar vendedor</DialogTitle>
+              <DialogTitle>Adicionar admin</DialogTitle>
             </DialogHeader>
-            <CreateSellerForm />
+            <CreateAdminForm />
           </DialogContent>
         </Dialog>
       </div>
 
-      {!vendedores || vendedores.length === 0 ? (
+      {!admins || admins.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">Nenhum vendedor cadastrado</p>
-          <p className="text-sm">Clique em &quot;Novo vendedor&quot; para começar</p>
+          <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">Nenhum admin cadastrado</p>
+          <p className="text-sm">Clique em &quot;Novo admin&quot; para começar</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {vendedores.map((v) => (
-            <SellerCard key={v.id} vendedor={v} />
+          {admins.map((admin) => (
+            <AdminCard key={admin.id} admin={admin} />
           ))}
         </div>
       )}

@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MoreVertical, Edit, Pause, Play, Trash2, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { getRoleLabel } from "@/lib/roles"
 import type { Vendedor } from "@/types"
 import {
   toggleVendedorStatusAction,
@@ -137,7 +138,7 @@ export function SellerCard({ vendedor }: SellerCardProps) {
             {vendedor.status.charAt(0).toUpperCase() + vendedor.status.slice(1)}
           </Badge>
           <Badge variant="secondary" className="text-xs">
-            {vendedor.role === "admin" ? "Admin" : "Vendedor"}
+            {getRoleLabel(vendedor.role)}
           </Badge>
         </div>
 

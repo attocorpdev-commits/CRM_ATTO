@@ -2,6 +2,7 @@
 
 import { createClient, createServiceClient } from "@/lib/supabase/server"
 import { createEvolutionClient } from "@/lib/whatsapp/evolution-api"
+import { isAdminOrAbove } from "@/lib/roles"
 import { revalidatePath } from "next/cache"
 
 export async function saveConfigAction(
@@ -17,7 +18,7 @@ export async function saveConfigAction(
     .eq("user_id", user!.id)
     .single()
 
-  if ((vendedor as { role?: string } | null)?.role !== "admin") return { error: "Acesso negado" }
+  if (!isAdminOrAbove((vendedor as { role?: string } | null)?.role)) return { error: "Acesso negado" }
 
   const payload = {
     nome_conta:        formData.get("nome_conta") as string,

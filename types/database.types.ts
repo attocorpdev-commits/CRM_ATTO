@@ -22,9 +22,10 @@ export interface Database {
           email: string
           whatsapp_number: string | null
           status: "ativo" | "inativo" | "pausado"
-          role: "admin" | "vendedor"
+          role: "superadmin" | "admin" | "vendedor"
           capacidade_maxima: number
           conversas_ativas: number
+          permissions: string[]
           created_at: string
           updated_at: string
         }
@@ -35,9 +36,10 @@ export interface Database {
           email: string
           whatsapp_number?: string | null
           status?: "ativo" | "inativo" | "pausado"
-          role?: "admin" | "vendedor"
+          role?: "superadmin" | "admin" | "vendedor"
           capacidade_maxima?: number
           conversas_ativas?: number
+          permissions?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -48,9 +50,10 @@ export interface Database {
           email?: string
           whatsapp_number?: string | null
           status?: "ativo" | "inativo" | "pausado"
-          role?: "admin" | "vendedor"
+          role?: "superadmin" | "admin" | "vendedor"
           capacidade_maxima?: number
           conversas_ativas?: number
+          permissions?: string[]
           created_at?: string
           updated_at?: string
         }

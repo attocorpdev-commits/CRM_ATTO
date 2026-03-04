@@ -1,31 +1,29 @@
 import { createClient } from "@/lib/supabase/server"
 import { isAdminOrAbove } from "@/lib/roles"
-import { ConversationListClient } from "@/components/conversation-list-client"
+import { KanbanBoard } from "@/components/kanban-board"
 import type { ConversaComVendedor } from "@/types"
 
-export default async function ConversasPage() {
+export default async function KanbanPage() {
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Get the vendedor record to determine role and ID for filtering
   const { data: vendedor } = await supabase
     .from("vendedores")
     .select("id, role")
     .eq("user_id", user!.id)
     .single()
 
-  // Admins see all conversations; vendedores see only theirs
   const isAdmin    = isAdminOrAbove(vendedor?.role)
   const vendedorId = isAdmin ? undefined : vendedor?.id
 
   let query = supabase
     .from("conversas_whatsapp")
     .select("*, vendedores(nome, email)")
+    .eq("status", "ativa")
     .order("ultima_mensagem_time", { ascending: false, nullsFirst: false })
-    .limit(50)
 
   if (!isAdmin && vendedorId) {
     query = query.eq("vendedor_id", vendedorId)
@@ -35,7 +33,7 @@ export default async function ConversasPage() {
 
   return (
     <div className="h-[calc(100vh-5rem)] flex flex-col">
-      <ConversationListClient
+      <KanbanBoard
         vendedorId={vendedorId}
         initialConversas={(initialConversas ?? []) as ConversaComVendedor[]}
       />

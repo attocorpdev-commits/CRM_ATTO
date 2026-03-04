@@ -5,9 +5,11 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   MessageSquare,
+  Columns3,
   Users,
   BarChart3,
   Settings,
+  Shield,
   LogOut,
   ChevronRight,
   Wifi,
@@ -28,6 +30,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { isAdminOrAbove, getRoleLabel } from "@/lib/roles"
 import type { Vendedor } from "@/types"
 import { toast } from "sonner"
 import { useWhatsappStatus } from "@/hooks/use-whatsapp-status"
@@ -37,14 +40,18 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   label: string
   adminOnly?: boolean
+  superadminOnly?: boolean
+  permission?: string
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/",            icon: LayoutDashboard, label: "Visão Geral"  },
-  { href: "/conversas",   icon: MessageSquare,   label: "Conversas"    },
-  { href: "/vendedores",  icon: Users,           label: "Vendedores",  adminOnly: true },
-  { href: "/relatorios",  icon: BarChart3,       label: "Relatórios"   },
-  { href: "/configuracoes", icon: Settings,      label: "Configurações", adminOnly: true },
+  { href: "/",              icon: LayoutDashboard, label: "Visão Geral",     permission: "dashboard" },
+  { href: "/conversas",     icon: MessageSquare,   label: "Conversas"      },
+  { href: "/kanban",        icon: Columns3,        label: "Pipeline"       },
+  { href: "/vendedores",    icon: Users,           label: "Vendedores",    adminOnly: true },
+  { href: "/relatorios",    icon: BarChart3,       label: "Relatórios",    permission: "relatorios" },
+  { href: "/configuracoes", icon: Settings,        label: "Configurações", adminOnly: true },
+  { href: "/superadmin",    icon: Shield,          label: "Superadmin",    superadminOnly: true },
 ]
 
 interface AppSidebarProps {
@@ -57,7 +64,8 @@ export function AppSidebar({ vendedor }: AppSidebarProps) {
   const supabase = createClient()
   const { isConnected } = useWhatsappStatus(30000)
 
-  const isAdmin      = vendedor?.role === "admin"
+  const isAdmin      = isAdminOrAbove(vendedor?.role)
+  const isSuperadmin = vendedor?.role === "superadmin"
   const initials     = vendedor?.nome
     ? vendedor.nome.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?"
@@ -103,9 +111,14 @@ export function AppSidebar({ vendedor }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV_ITEMS.filter(
-                (item) => !item.adminOnly || isAdmin
-              ).map((item) => (
+              {NAV_ITEMS.filter((item) => {
+                if (item.superadminOnly) return isSuperadmin
+                if (item.adminOnly) return isAdmin
+                if (item.permission && !isAdmin) {
+                  return (vendedor?.permissions as string[] | undefined)?.includes(item.permission)
+                }
+                return true
+              }).map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
@@ -139,7 +152,7 @@ export function AppSidebar({ vendedor }: AppSidebarProps) {
                 variant={vendedor?.status === "ativo" ? "default" : "secondary"}
                 className="text-[10px] h-4 px-1"
               >
-                {vendedor?.role === "admin" ? "Admin" : "Vendedor"}
+                {getRoleLabel(vendedor?.role)}
               </Badge>
             </div>
           </div>

@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import { isAdminOrAbove } from "@/lib/roles"
 import {
   Card,
   CardContent,
@@ -21,6 +23,25 @@ import { ptBR } from "date-fns/locale"
 
 export default async function RelatoriosPage() {
   const supabase = await createClient()
+
+  // Permission check: only admin or vendedor with "relatorios" permission
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: vendedor } = await supabase
+      .from("vendedores")
+      .select("role, permissions")
+      .eq("user_id", user.id)
+      .single()
+
+    if (
+      vendedor &&
+      !isAdminOrAbove(vendedor.role) &&
+      !(vendedor.permissions as string[] | null)?.includes("relatorios")
+    ) {
+      redirect("/conversas")
+    }
+  }
+
   const thirtyDaysAgo = subDays(new Date(), 30).toISOString()
 
   const [

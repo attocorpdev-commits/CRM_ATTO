@@ -64,6 +64,7 @@ export async function updateConversaEstagioAction(
 
     if (error) throw error
     revalidatePath(`/conversas/${conversaId}`)
+    revalidatePath("/kanban")
     return {}
   } catch (err) {
     return { error: (err as Error).message }
