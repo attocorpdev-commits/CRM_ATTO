@@ -23,8 +23,12 @@ export function DisparoProgress({ disparoId, onFinished }: DisparoProgressProps)
 
   useEffect(() => {
     if (isFinished) {
-      onFinished?.()
       router.refresh()
+      // Delay clearing active state so the user can see the final status
+      const timer = setTimeout(() => {
+        onFinished?.()
+      }, 5000)
+      return () => clearTimeout(timer)
     }
   }, [isFinished, onFinished, router])
 
