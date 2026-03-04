@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicAsset =
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/whatsapp/webhook") || // webhook must be public
+    pathname.startsWith("/api/disparos/execute") || // internal fire-and-forget
     pathname === "/favicon.ico"
 
   if (!user && !isAuthPage && !isPublicAsset) {

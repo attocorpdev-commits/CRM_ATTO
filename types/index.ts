@@ -39,3 +39,13 @@ export type VendedorStatus  = Vendedor["status"]
 export type VendedorRole    = Vendedor["role"]
 export type MensagemDirecao = Mensagem["direcao"]
 export type MensagemStatus  = Mensagem["status"]
+
+// ============================================================
+// Disparos (bulk messaging)
+// ============================================================
+export type Disparo              = Database["public"]["Tables"]["disparos"]["Row"]
+export type DisparoInsert        = Database["public"]["Tables"]["disparos"]["Insert"]
+export type DisparoContato       = Database["public"]["Tables"]["disparo_contatos"]["Row"]
+export type DisparoContatoInsert = Database["public"]["Tables"]["disparo_contatos"]["Insert"]
+export type DisparoStatus        = Disparo["status"]
+export type DisparoContatoStatus = DisparoContato["status"]

@@ -10,6 +10,8 @@ import {
   BarChart3,
   Settings,
   Shield,
+  Send,
+  User,
   LogOut,
   ChevronRight,
   Wifi,
@@ -49,7 +51,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/conversas",     icon: MessageSquare,   label: "Conversas"      },
   { href: "/kanban",        icon: Columns3,        label: "Pipeline"       },
   { href: "/vendedores",    icon: Users,           label: "Vendedores",    adminOnly: true },
+  { href: "/disparos",      icon: Send,            label: "Disparos"       },
   { href: "/relatorios",    icon: BarChart3,       label: "Relatórios",    permission: "relatorios" },
+  { href: "/minha-conta",   icon: User,            label: "Minha Conta"    },
   { href: "/configuracoes", icon: Settings,        label: "Configurações", adminOnly: true },
   { href: "/superadmin",    icon: Shield,          label: "Superadmin",    superadminOnly: true },
 ]

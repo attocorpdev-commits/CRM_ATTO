@@ -57,6 +57,18 @@ export function ConfigForm({ config }: ConfigFormProps) {
           required
         />
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="n8n_webhook_url">Webhook N8N (opcional)</Label>
+        <Input
+          id="n8n_webhook_url"
+          name="n8n_webhook_url"
+          placeholder="https://n8n.seuservidor.com/webhook/..."
+          defaultValue={config?.n8n_webhook_url ?? ""}
+        />
+        <p className="text-xs text-muted-foreground">
+          Se preenchido, todos os eventos do WhatsApp serão repassados para esta URL.
+        </p>
+      </div>
       {state?.error && (
         <p className="text-sm text-destructive">{state.error}</p>
       )}

@@ -20,11 +20,14 @@ export async function saveConfigAction(
 
   if (!isAdminOrAbove((vendedor as { role?: string } | null)?.role)) return { error: "Acesso negado" }
 
+  const n8nUrl = (formData.get("n8n_webhook_url") as string)?.trim() || null
+
   const payload = {
     nome_conta:        formData.get("nome_conta") as string,
     evolution_api_url: (formData.get("evolution_api_url") as string).replace(/\/$/, ""),
     evolution_api_key: formData.get("evolution_api_key") as string,
     instance_name:     formData.get("instance_name") as string,
+    n8n_webhook_url:   n8nUrl,
   }
 
   if (!payload.nome_conta || !payload.evolution_api_url || !payload.evolution_api_key || !payload.instance_name) {

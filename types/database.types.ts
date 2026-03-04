@@ -163,6 +163,7 @@ export interface Database {
           numero_whatsapp: string | null
           status: "ativo" | "inativo"
           webhook_url: string | null
+          n8n_webhook_url: string | null
           created_at: string
         }
         Insert: {
@@ -174,6 +175,7 @@ export interface Database {
           numero_whatsapp?: string | null
           status?: "ativo" | "inativo"
           webhook_url?: string | null
+          n8n_webhook_url?: string | null
           created_at?: string
         }
         Update: {
@@ -185,9 +187,107 @@ export interface Database {
           numero_whatsapp?: string | null
           status?: "ativo" | "inativo"
           webhook_url?: string | null
+          n8n_webhook_url?: string | null
           created_at?: string
         }
         Relationships: []
+      }
+      disparos: {
+        Row: {
+          id: string
+          vendedor_id: string
+          mensagem: string
+          total_contatos: number
+          enviados: number
+          falhas: number
+          delay_segundos: number
+          status: "pendente" | "em_andamento" | "concluido" | "cancelado" | "erro"
+          erro_msg: string | null
+          started_at: string | null
+          finished_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          vendedor_id: string
+          mensagem: string
+          total_contatos?: number
+          enviados?: number
+          falhas?: number
+          delay_segundos?: number
+          status?: "pendente" | "em_andamento" | "concluido" | "cancelado" | "erro"
+          erro_msg?: string | null
+          started_at?: string | null
+          finished_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          vendedor_id?: string
+          mensagem?: string
+          total_contatos?: number
+          enviados?: number
+          falhas?: number
+          delay_segundos?: number
+          status?: "pendente" | "em_andamento" | "concluido" | "cancelado" | "erro"
+          erro_msg?: string | null
+          started_at?: string | null
+          finished_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disparos_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "vendedores"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      disparo_contatos: {
+        Row: {
+          id: string
+          disparo_id: string
+          nome: string
+          numero: string
+          status: "pendente" | "enviado" | "falha"
+          erro_msg: string | null
+          enviado_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          disparo_id: string
+          nome: string
+          numero: string
+          status?: "pendente" | "enviado" | "falha"
+          erro_msg?: string | null
+          enviado_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          disparo_id?: string
+          nome?: string
+          numero?: string
+          status?: "pendente" | "enviado" | "falha"
+          erro_msg?: string | null
+          enviado_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disparo_contatos_disparo_id_fkey"
+            columns: ["disparo_id"]
+            isOneToOne: false
+            referencedRelation: "disparos"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: Record<string, never>
@@ -211,6 +311,14 @@ export interface Database {
       get_dashboard_metrics: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      increment_disparo_enviados: {
+        Args: { p_disparo_id: string }
+        Returns: undefined
+      }
+      increment_disparo_falhas: {
+        Args: { p_disparo_id: string }
+        Returns: undefined
       }
     }
     Enums: Record<PropertyKey, never>

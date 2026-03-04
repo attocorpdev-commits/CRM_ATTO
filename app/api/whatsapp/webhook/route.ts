@@ -58,6 +58,23 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient()
   const evolution = createEvolutionClient()
 
+  // Forward to n8n webhook (fire-and-forget, never blocks CRM processing)
+  const { data: configRow } = await supabase
+    .from("configuracoes_whatsapp")
+    .select("n8n_webhook_url")
+    .limit(1)
+    .single()
+
+  if (configRow?.n8n_webhook_url) {
+    fetch(configRow.n8n_webhook_url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: rawBody,
+    }).catch((err) => {
+      console.error("[Webhook] N8N forward failed:", err)
+    })
+  }
+
   try {
     switch (payload.event) {
       // --------------------------------------------------------
