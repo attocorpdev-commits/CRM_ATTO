@@ -86,7 +86,7 @@ export async function registerWebhookAction() {
     await evolution.setWebhook({
       url:                webhookUrl,
       webhook_by_events:  false,
-      webhook_base64:     false,
+      webhook_base64:     true,
       events: [
         "MESSAGES_UPSERT",
         "MESSAGES_UPDATE",

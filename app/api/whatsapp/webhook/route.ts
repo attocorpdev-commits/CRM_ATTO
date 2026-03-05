@@ -97,6 +97,21 @@ export async function POST(req: NextRequest) {
         const mid         = key.id
         const content     = evolution.extractTextContent(payload.data)
         const media       = evolution.extractMediaAttachment(payload.data)
+
+        // Debug: log media message payloads to understand Evolution API structure
+        if (media) {
+          console.log("[Webhook] Media message received:", JSON.stringify({
+            messageType: payload.data.messageType,
+            hasBase64InMedia: !!media.base64,
+            hasUrlInMedia: !!media.url,
+            mediaType: media.type,
+            // Log top-level data keys to find where base64 lives
+            dataKeys: Object.keys(payload.data),
+            // Check if base64 is at data level
+            hasBase64AtDataLevel: !!(payload.data as Record<string, unknown>)["base64"],
+            hasMediaUrlAtDataLevel: !!(payload.data as Record<string, unknown>)["mediaUrl"],
+          }, null, 2))
+        }
         const senderName  = pushName ?? phoneNumber
         const msgTimestamp = new Date(messageTimestamp * 1000).toISOString()
 

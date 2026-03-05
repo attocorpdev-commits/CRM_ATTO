@@ -36,6 +36,9 @@ export interface EvolutionWebhookPayload {
     update?: {
       status: string
     }
+    // Evolution API sends base64 at data level when webhook_base64 is enabled
+    base64?: string
+    mediaUrl?: string
   }
 }
 
@@ -210,11 +213,15 @@ export class EvolutionApiClient {
     const msg = data.message
     if (!msg) return null
 
+    // Evolution API with webhook_base64: true sends base64 at data level
+    const topBase64 = data.base64 ?? undefined
+    const topUrl    = data.mediaUrl ?? undefined
+
     if (msg.imageMessage) {
       return {
         type: "image",
-        url: msg.imageMessage.url,
-        base64: msg.imageMessage.base64,
+        url: msg.imageMessage.url ?? topUrl,
+        base64: msg.imageMessage.base64 ?? topBase64,
         mimetype: msg.imageMessage.mimetype,
         caption: msg.imageMessage.caption,
       }
@@ -222,16 +229,16 @@ export class EvolutionApiClient {
     if (msg.audioMessage) {
       return {
         type: "audio",
-        url: msg.audioMessage.url,
-        base64: msg.audioMessage.base64,
+        url: msg.audioMessage.url ?? topUrl,
+        base64: msg.audioMessage.base64 ?? topBase64,
         mimetype: msg.audioMessage.mimetype,
       }
     }
     if (msg.videoMessage) {
       return {
         type: "video",
-        url: msg.videoMessage.url,
-        base64: msg.videoMessage.base64,
+        url: msg.videoMessage.url ?? topUrl,
+        base64: msg.videoMessage.base64 ?? topBase64,
         mimetype: msg.videoMessage.mimetype,
         caption: msg.videoMessage.caption,
       }
@@ -239,8 +246,8 @@ export class EvolutionApiClient {
     if (msg.documentMessage) {
       return {
         type: "document",
-        url: msg.documentMessage.url,
-        base64: msg.documentMessage.base64,
+        url: msg.documentMessage.url ?? topUrl,
+        base64: msg.documentMessage.base64 ?? topBase64,
         mimetype: msg.documentMessage.mimetype,
         fileName: msg.documentMessage.fileName,
         caption: msg.documentMessage.caption,
@@ -249,8 +256,8 @@ export class EvolutionApiClient {
     if (msg.stickerMessage) {
       return {
         type: "sticker",
-        url: msg.stickerMessage.url,
-        base64: msg.stickerMessage.base64,
+        url: msg.stickerMessage.url ?? topUrl,
+        base64: msg.stickerMessage.base64 ?? topBase64,
         mimetype: msg.stickerMessage.mimetype,
       }
     }
