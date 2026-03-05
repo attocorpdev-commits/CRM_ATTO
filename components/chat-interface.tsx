@@ -392,7 +392,9 @@ function MediaContent({ anexo, isOutbound }: { anexo: Anexo; isOutbound: boolean
 function MessageBubble({ message }: { message: Mensagem }) {
   const isOutbound = message.direcao === "outbound"
   const time       = format(new Date(message.timestamp), "HH:mm")
-  const anexo      = message.anexos as Anexo | null
+  // Only treat as media if anexos has a valid type and source (url or base64)
+  const rawAnexo   = message.anexos as Anexo | null
+  const anexo      = rawAnexo?.type && (rawAnexo.url || rawAnexo.base64) ? rawAnexo : null
 
   // For stickers, render without bubble background
   if (anexo?.type === "sticker") {

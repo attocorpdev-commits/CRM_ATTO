@@ -84,6 +84,9 @@ export async function POST(req: NextRequest) {
       // --------------------------------------------------------
       case "send.message":
       case "messages.upsert": {
+        if (payload.event === "send.message") {
+          console.log("[Webhook] send.message payload:", JSON.stringify(payload.data, null, 2))
+        }
         const { key, message, messageTimestamp, pushName } = payload.data
 
         // Ignore group messages
@@ -115,6 +118,30 @@ export async function POST(req: NextRequest) {
           .single()
 
         if (existingMsg) break
+
+        // For send.message events (API-sent messages), check if the CRM already
+        // inserted this message (without mid). Match by conversa + direction + content + close timestamp.
+        if (payload.event === "send.message" && isFromMe && displayText) {
+          const fiveSecAgo = new Date(Date.now() - 30_000).toISOString()
+          const { data: recentMatch } = await supabase
+            .from("mensagens_whatsapp")
+            .select("id")
+            .is("mid", null)
+            .eq("direcao", "outbound")
+            .eq("conteudo", displayText)
+            .gte("created_at", fiveSecAgo)
+            .limit(1)
+            .single()
+
+          if (recentMatch) {
+            // Update the existing record with the WhatsApp message ID
+            await supabase
+              .from("mensagens_whatsapp")
+              .update({ mid })
+              .eq("id", recentMatch.id)
+            break
+          }
+        }
 
         // Find or create the conversation
         let { data: conversa } = await supabase
