@@ -80,8 +80,9 @@ export async function POST(req: NextRequest) {
   try {
     switch (payload.event) {
       // --------------------------------------------------------
-      // New message received (inbound) or sent (outbound echo)
+      // New message received (inbound), outbound echo, or sent via API (agent/n8n)
       // --------------------------------------------------------
+      case "send.message":
       case "messages.upsert": {
         const { key, message, messageTimestamp, pushName } = payload.data
 
@@ -92,8 +93,19 @@ export async function POST(req: NextRequest) {
         const phoneNumber = formatPhoneNumber(key.remoteJid)
         const mid         = key.id
         const content     = evolution.extractTextContent(payload.data)
+        const media       = evolution.extractMediaAttachment(payload.data)
         const senderName  = pushName ?? phoneNumber
         const msgTimestamp = new Date(messageTimestamp * 1000).toISOString()
+
+        // Build display text: use content if available, or media type label
+        const MEDIA_LABELS: Record<string, string> = {
+          image: "\ud83d\udcf7 Imagem",
+          audio: "\ud83c\udfa4 \u00c1udio",
+          video: "\ud83c\udfa5 V\u00eddeo",
+          document: "\ud83d\udcc4 Documento",
+          sticker: "\ud83e\udea7 Sticker",
+        }
+        const displayText = content ?? (media ? MEDIA_LABELS[media.type] ?? "[m\u00eddia]" : null)
 
         // Idempotency check: skip if we already processed this message ID
         const { data: existingMsg } = await supabase
@@ -123,7 +135,7 @@ export async function POST(req: NextRequest) {
             .insert({
               numero_cliente:       phoneNumber,
               nome_cliente:         senderName,
-              ultima_mensagem:      content,
+              ultima_mensagem:      displayText,
               ultima_mensagem_time: msgTimestamp,
               unread_count:         1,
             })
@@ -155,7 +167,7 @@ export async function POST(req: NextRequest) {
           await supabase
             .from("conversas_whatsapp")
             .update({
-              ultima_mensagem:      content,
+              ultima_mensagem:      displayText,
               ultima_mensagem_time: msgTimestamp,
               ...(!isFromMe ? { unread_count: (conversa.unread_count ?? 0) + 1 } : {}),
               ...(conversa.status === "encerrada" ? { status: "ativa" } : {}),
@@ -168,10 +180,11 @@ export async function POST(req: NextRequest) {
           await supabase.from("mensagens_whatsapp").insert({
             conversa_id: conversa.id,
             direcao:     isFromMe ? "outbound" : "inbound",
-            conteudo:    content,
+            conteudo:    displayText,
             mid,
             status:      isFromMe ? "enviada" : "entregue",
             timestamp:   msgTimestamp,
+            ...(media ? { anexos: media } : {}),
           })
         }
         break

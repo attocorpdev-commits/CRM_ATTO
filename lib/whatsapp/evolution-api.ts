@@ -16,16 +16,17 @@ export interface EvolutionWebhookPayload {
     message?: {
       conversation?: string
       extendedTextMessage?: { text: string }
-      imageMessage?: { caption?: string; url?: string; mimetype?: string }
-      audioMessage?: { url?: string; mimetype?: string }
-      videoMessage?: { caption?: string; url?: string; mimetype?: string }
+      imageMessage?: { caption?: string; url?: string; mimetype?: string; base64?: string }
+      audioMessage?: { url?: string; mimetype?: string; base64?: string }
+      videoMessage?: { caption?: string; url?: string; mimetype?: string; base64?: string }
       documentMessage?: {
         caption?: string
         url?: string
         fileName?: string
         mimetype?: string
+        base64?: string
       }
-      stickerMessage?: { url?: string }
+      stickerMessage?: { url?: string; mimetype?: string; base64?: string }
     }
     messageType: string
     messageTimestamp: number
@@ -197,6 +198,64 @@ export class EvolutionApiClient {
       msg.documentMessage?.caption ??
       null
     )
+  }
+
+  /**
+   * Extract media attachment info from a webhook payload.
+   * Returns null for pure text messages.
+   */
+  extractMediaAttachment(
+    data: EvolutionWebhookPayload["data"]
+  ): { type: string; url?: string; base64?: string; mimetype?: string; fileName?: string; caption?: string } | null {
+    const msg = data.message
+    if (!msg) return null
+
+    if (msg.imageMessage) {
+      return {
+        type: "image",
+        url: msg.imageMessage.url,
+        base64: msg.imageMessage.base64,
+        mimetype: msg.imageMessage.mimetype,
+        caption: msg.imageMessage.caption,
+      }
+    }
+    if (msg.audioMessage) {
+      return {
+        type: "audio",
+        url: msg.audioMessage.url,
+        base64: msg.audioMessage.base64,
+        mimetype: msg.audioMessage.mimetype,
+      }
+    }
+    if (msg.videoMessage) {
+      return {
+        type: "video",
+        url: msg.videoMessage.url,
+        base64: msg.videoMessage.base64,
+        mimetype: msg.videoMessage.mimetype,
+        caption: msg.videoMessage.caption,
+      }
+    }
+    if (msg.documentMessage) {
+      return {
+        type: "document",
+        url: msg.documentMessage.url,
+        base64: msg.documentMessage.base64,
+        mimetype: msg.documentMessage.mimetype,
+        fileName: msg.documentMessage.fileName,
+        caption: msg.documentMessage.caption,
+      }
+    }
+    if (msg.stickerMessage) {
+      return {
+        type: "sticker",
+        url: msg.stickerMessage.url,
+        base64: msg.stickerMessage.base64,
+        mimetype: msg.stickerMessage.mimetype,
+      }
+    }
+
+    return null
   }
 
   /**

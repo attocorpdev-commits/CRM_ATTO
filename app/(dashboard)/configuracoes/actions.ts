@@ -90,6 +90,7 @@ export async function registerWebhookAction() {
       events: [
         "MESSAGES_UPSERT",
         "MESSAGES_UPDATE",
+        "SEND_MESSAGE",
         "CONNECTION_UPDATE",
         "QRCODE_UPDATED",
       ],

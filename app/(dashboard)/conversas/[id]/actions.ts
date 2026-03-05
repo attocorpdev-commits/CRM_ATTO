@@ -51,6 +51,92 @@ export async function sendMessageAction(
   }
 }
 
+export async function sendMediaAction(
+  conversaId: string,
+  phoneNumber: string,
+  formData: FormData
+): Promise<{ error?: string }> {
+  try {
+    const file     = formData.get("file") as File | null
+    const caption  = (formData.get("caption") as string) ?? ""
+
+    if (!file) return { error: "Nenhum arquivo selecionado" }
+
+    const evolution = await createEvolutionClientFromConfig()
+    const supabase  = createServiceClient()
+
+    // Convert file to base64
+    const buffer   = Buffer.from(await file.arrayBuffer())
+    const base64   = buffer.toString("base64")
+    const mimetype = file.type
+    const fileName = file.name
+
+    // Determine media type
+    let mediatype: "image" | "video" | "audio" | "document"
+    if (mimetype.startsWith("image/")) mediatype = "image"
+    else if (mimetype.startsWith("video/")) mediatype = "video"
+    else if (mimetype.startsWith("audio/")) mediatype = "audio"
+    else mediatype = "document"
+
+    // Send via Evolution API
+    await evolution.sendMedia({
+      number:    phoneNumber,
+      mediatype,
+      mimetype,
+      caption:   caption || undefined,
+      media:     base64,
+      fileName,
+    })
+
+    const now = new Date().toISOString()
+
+    const MEDIA_LABELS: Record<string, string> = {
+      image:    "\ud83d\udcf7 Imagem",
+      audio:    "\ud83c\udfa4 \u00c1udio",
+      video:    "\ud83c\udfa5 V\u00eddeo",
+      document: "\ud83d\udcc4 Documento",
+    }
+    const displayText = caption || MEDIA_LABELS[mediatype] || "[m\u00eddia]"
+
+    const anexo = {
+      type: mediatype,
+      base64,
+      mimetype,
+      fileName,
+      caption: caption || undefined,
+    }
+
+    // Insert outbound message
+    const { error: insertError } = await supabase
+      .from("mensagens_whatsapp")
+      .insert({
+        conversa_id: conversaId,
+        direcao:     "outbound",
+        conteudo:    displayText,
+        status:      "enviada",
+        timestamp:   now,
+        anexos:      anexo,
+      })
+
+    if (insertError) throw insertError
+
+    // Update conversation last message
+    await supabase
+      .from("conversas_whatsapp")
+      .update({
+        ultima_mensagem:      displayText,
+        ultima_mensagem_time: now,
+        status:               "ativa",
+      })
+      .eq("id", conversaId)
+
+    revalidatePath(`/conversas/${conversaId}`)
+    return {}
+  } catch (err) {
+    return { error: (err as Error).message }
+  }
+}
+
 export async function updateConversaEstagioAction(
   conversaId: string,
   estagio: string

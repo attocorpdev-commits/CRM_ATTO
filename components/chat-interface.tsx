@@ -37,12 +37,14 @@ import {
   Archive,
   XCircle,
   UserRoundPlus,
+  Download,
 } from "lucide-react"
 import { cn, formatRelativeTime } from "@/lib/utils"
 import { toast } from "sonner"
-import type { Conversa, Mensagem } from "@/types"
+import type { Anexo, Conversa, Mensagem } from "@/types"
 import {
   sendMessageAction,
+  sendMediaAction,
   updateConversaEstagioAction,
   updateConversaStatusAction,
   reassignConversaAction,
@@ -91,6 +93,13 @@ export function ChatInterface({ conversa, initialMensagens, vendedores }: ChatIn
   const handleSend = useCallback(
     async (text: string) => {
       return sendMessageAction(conversa.id, conversa.numero_cliente, text)
+    },
+    [conversa.id, conversa.numero_cliente]
+  )
+
+  const handleSendMedia = useCallback(
+    async (formData: FormData) => {
+      return sendMediaAction(conversa.id, conversa.numero_cliente, formData)
     },
     [conversa.id, conversa.numero_cliente]
   )
@@ -305,15 +314,100 @@ export function ChatInterface({ conversa, initialMensagens, vendedores }: ChatIn
       {/* Input */}
       <MessageInput
         onSend={handleSend}
+        onSendMedia={handleSendMedia}
         disabled={isArchived || isClosed}
       />
     </div>
   )
 }
 
+function MediaContent({ anexo, isOutbound }: { anexo: Anexo; isOutbound: boolean }) {
+  const src = anexo.base64
+    ? `data:${anexo.mimetype ?? "application/octet-stream"};base64,${anexo.base64}`
+    : anexo.url
+
+  if (!src) return <p className="italic opacity-70">[mídia indisponível]</p>
+
+  switch (anexo.type) {
+    case "image":
+      return (
+        <div className="space-y-1">
+          <img
+            src={src}
+            alt={anexo.caption ?? "Imagem"}
+            className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
+            onClick={() => window.open(src, "_blank")}
+          />
+          {anexo.caption && (
+            <p className="whitespace-pre-wrap break-words text-sm">{anexo.caption}</p>
+          )}
+        </div>
+      )
+    case "video":
+      return (
+        <div className="space-y-1">
+          <video
+            src={src}
+            controls
+            className="rounded-lg max-w-full max-h-64"
+            preload="metadata"
+          />
+          {anexo.caption && (
+            <p className="whitespace-pre-wrap break-words text-sm">{anexo.caption}</p>
+          )}
+        </div>
+      )
+    case "audio":
+      return (
+        <audio src={src} controls className="max-w-full min-w-[200px]" preload="metadata" />
+      )
+    case "document":
+      return (
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-2 p-2 rounded-lg border",
+            isOutbound ? "border-primary-foreground/30" : "border-border"
+          )}
+        >
+          <Download className="h-4 w-4 shrink-0" />
+          <span className="text-sm truncate">{anexo.fileName ?? "Documento"}</span>
+        </a>
+      )
+    case "sticker":
+      return (
+        <img
+          src={src}
+          alt="Sticker"
+          className="max-w-[150px] max-h-[150px]"
+        />
+      )
+    default:
+      return <p className="italic opacity-70">[mídia]</p>
+  }
+}
+
 function MessageBubble({ message }: { message: Mensagem }) {
   const isOutbound = message.direcao === "outbound"
   const time       = format(new Date(message.timestamp), "HH:mm")
+  const anexo      = message.anexos as Anexo | null
+
+  // For stickers, render without bubble background
+  if (anexo?.type === "sticker") {
+    return (
+      <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
+        <div className="max-w-[75%]">
+          <MediaContent anexo={anexo} isOutbound={isOutbound} />
+          <div className={cn("flex items-center gap-1 mt-1", isOutbound ? "justify-end" : "justify-start")}>
+            <span className="text-[10px] text-muted-foreground">{time}</span>
+            {isOutbound && STATUS_ICONS[message.status]}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
@@ -325,7 +419,9 @@ function MessageBubble({ message }: { message: Mensagem }) {
             : "bg-muted text-foreground rounded-bl-sm"
         )}
       >
-        {message.conteudo ? (
+        {anexo ? (
+          <MediaContent anexo={anexo} isOutbound={isOutbound} />
+        ) : message.conteudo ? (
           <p className="whitespace-pre-wrap break-words">{message.conteudo}</p>
         ) : (
           <p className="italic opacity-70">[mídia]</p>

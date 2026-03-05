@@ -31,6 +31,18 @@ export type ConversaComVendedor = Conversa & {
 }
 
 // ============================================================
+// Media attachment type (stored in mensagens_whatsapp.anexos)
+// ============================================================
+export interface Anexo {
+  type: "image" | "audio" | "video" | "document" | "sticker"
+  url?: string
+  base64?: string
+  mimetype?: string
+  fileName?: string
+  caption?: string
+}
+
+// ============================================================
 // Domain-specific union types
 // ============================================================
 export type ConversaStatus  = Conversa["status"]
