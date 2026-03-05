@@ -22,14 +22,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Upload, FileText, AlertCircle, Plus, Trash2 } from "lucide-react"
+import { Upload, FileText, AlertCircle, Plus, Trash2, BookUser, Loader2 } from "lucide-react"
 
 interface DisparoFormProps {
   hasActiveDisparo: boolean
   onCreated?: (disparoId: string) => void
 }
 
-type InputMode = "csv" | "manual"
+type InputMode = "csv" | "manual" | "lista"
+
+interface ListaSummary {
+  id: string
+  nome: string
+  total_contatos: number
+}
 
 export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
   const [state, action, isPending] = useActionState(createDisparoAction, null)
@@ -42,6 +48,12 @@ export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
   const [manualNumero, setManualNumero] = useState("")
   const [manualError, setManualError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Lista mode state
+  const [listas, setListas] = useState<ListaSummary[]>([])
+  const [listasLoading, setListasLoading] = useState(false)
+  const [selectedListaId, setSelectedListaId] = useState<string | null>(null)
+  const [listaContactsLoading, setListaContactsLoading] = useState(false)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -73,7 +85,39 @@ export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
     setManualNome("")
     setManualNumero("")
     setManualError(null)
+    setSelectedListaId(null)
     if (fileRef.current) fileRef.current.value = ""
+
+    if (mode === "lista" && listas.length === 0) {
+      fetchListas()
+    }
+  }
+
+  async function fetchListas() {
+    setListasLoading(true)
+    try {
+      const res = await fetch("/api/contatos/listas")
+      const data = await res.json()
+      setListas(data)
+    } catch {
+      // ignore
+    } finally {
+      setListasLoading(false)
+    }
+  }
+
+  async function selectLista(listaId: string) {
+    setSelectedListaId(listaId)
+    setListaContactsLoading(true)
+    try {
+      const res = await fetch(`/api/contatos/listas/${listaId}/items`)
+      const data = await res.json()
+      setContacts(data)
+    } catch {
+      setContacts([])
+    } finally {
+      setListaContactsLoading(false)
+    }
   }
 
   function addManualContact() {
@@ -138,7 +182,7 @@ export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
         <Label className="text-base font-medium">1. Contatos</Label>
 
         {/* Mode toggle */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             type="button"
             variant={inputMode === "csv" ? "default" : "outline"}
@@ -156,6 +200,15 @@ export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Adicionar manualmente
+          </Button>
+          <Button
+            type="button"
+            variant={inputMode === "lista" ? "default" : "outline"}
+            size="sm"
+            onClick={() => switchMode("lista")}
+          >
+            <BookUser className="mr-1.5 h-3.5 w-3.5" />
+            Lista salva
           </Button>
         </div>
 
@@ -255,6 +308,44 @@ export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
           </div>
         )}
 
+        {/* Lista mode */}
+        {inputMode === "lista" && (
+          <div className="space-y-3">
+            {listasLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando listas...
+              </div>
+            ) : listas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma lista salva. Crie uma em <a href="/contatos" className="underline">Contatos</a>.
+              </p>
+            ) : (
+              <Select
+                value={selectedListaId ?? ""}
+                onValueChange={(val) => selectLista(val)}
+              >
+                <SelectTrigger className="w-full" suppressHydrationWarning>
+                  <SelectValue placeholder="Selecione uma lista" />
+                </SelectTrigger>
+                <SelectContent>
+                  {listas.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.nome} ({l.total_contatos} contatos)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {listaContactsLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando contatos da lista...
+              </div>
+            )}
+          </div>
+        )}
+
         {/* CSV Errors */}
         {csvErrors.length > 0 && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 space-y-1">
@@ -273,7 +364,7 @@ export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
             <p className="text-sm font-medium">
               {contacts.length} contato{contacts.length !== 1 ? "s" : ""} carregado{contacts.length !== 1 ? "s" : ""}
             </p>
-            <div className="rounded-md border">
+            <div className="rounded-md border max-h-64 overflow-y-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -302,7 +393,7 @@ export function DisparoForm({ hasActiveDisparo, onCreated }: DisparoFormProps) {
                       )}
                     </TableRow>
                   ))}
-                  {inputMode === "csv" && contacts.length > 5 && (
+                  {inputMode !== "manual" && contacts.length > 5 && (
                     <TableRow>
                       <TableCell colSpan={2} className="text-center text-muted-foreground text-sm">
                         ... e mais {contacts.length - 5} contatos

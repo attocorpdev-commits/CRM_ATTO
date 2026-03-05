@@ -85,12 +85,10 @@ export async function POST(req: NextRequest) {
       case "messages.upsert": {
         const { key, message, messageTimestamp, pushName } = payload.data
 
-        // Ignore outbound echo — we handle outbound in the sendMessageAction
-        if (key.fromMe) break
-
         // Ignore group messages
         if (isGroupJid(key.remoteJid)) break
 
+        const isFromMe    = key.fromMe
         const phoneNumber = formatPhoneNumber(key.remoteJid)
         const mid         = key.id
         const content     = evolution.extractTextContent(payload.data)
@@ -115,6 +113,10 @@ export async function POST(req: NextRequest) {
           .single()
 
         if (!conversa) {
+          if (isFromMe) {
+            // Outbound message from phone but no active conversation — ignore
+            break
+          }
           // New conversation — insert and distribute
           const { data: newConversa, error: insertError } = await supabase
             .from("conversas_whatsapp")
@@ -148,26 +150,27 @@ export async function POST(req: NextRequest) {
             }
           }
         } else {
-          // Update existing conversation's last message + unread count
+          // Update existing conversation's last message
+          // Only increment unread_count for inbound messages
           await supabase
             .from("conversas_whatsapp")
             .update({
               ultima_mensagem:      content,
               ultima_mensagem_time: msgTimestamp,
-              unread_count:         (conversa.unread_count ?? 0) + 1,
+              ...(!isFromMe ? { unread_count: (conversa.unread_count ?? 0) + 1 } : {}),
               ...(conversa.status === "encerrada" ? { status: "ativa" } : {}),
             })
             .eq("id", conversa.id)
         }
 
-        // Insert the inbound message
+        // Insert the message
         if (conversa) {
           await supabase.from("mensagens_whatsapp").insert({
             conversa_id: conversa.id,
-            direcao:     "inbound",
+            direcao:     isFromMe ? "outbound" : "inbound",
             conteudo:    content,
             mid,
-            status:      "entregue",
+            status:      isFromMe ? "enviada" : "entregue",
             timestamp:   msgTimestamp,
           })
         }
