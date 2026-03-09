@@ -16,12 +16,13 @@ export async function sendMessageAction(
     const evolution = await createEvolutionClientFromConfig()
     const supabase  = createServiceClient()
 
-    // Send via Evolution API
-    await evolution.sendText({ number: phoneNumber, text: text.trim() })
+    // Send via Evolution API — capture the message ID to prevent webhook duplication
+    const response = await evolution.sendText({ number: phoneNumber, text: text.trim() })
+    const mid = response?.key?.id ?? undefined
 
     const now = new Date().toISOString()
 
-    // Insert outbound message
+    // Insert outbound message with mid so webhook idempotency check can detect it
     const { error: insertError } = await supabase
       .from("mensagens_whatsapp")
       .insert({
@@ -30,6 +31,7 @@ export async function sendMessageAction(
         conteudo:    text.trim(),
         status:      "enviada",
         timestamp:   now,
+        ...(mid ? { mid } : {}),
       })
 
     if (insertError) throw insertError
@@ -78,8 +80,8 @@ export async function sendMediaAction(
     else if (mimetype.startsWith("audio/")) mediatype = "audio"
     else mediatype = "document"
 
-    // Send via Evolution API
-    await evolution.sendMedia({
+    // Send via Evolution API — capture the message ID to prevent webhook duplication
+    const response = await evolution.sendMedia({
       number:    phoneNumber,
       mediatype,
       mimetype,
@@ -87,6 +89,7 @@ export async function sendMediaAction(
       media:     base64,
       fileName,
     })
+    const mid = response?.key?.id ?? undefined
 
     const now = new Date().toISOString()
 
@@ -116,6 +119,7 @@ export async function sendMediaAction(
         status:      "enviada",
         timestamp:   now,
         anexos:      anexo,
+        ...(mid ? { mid } : {}),
       })
 
     if (insertError) throw insertError
