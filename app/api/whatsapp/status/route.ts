@@ -10,7 +10,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const evolution = await createEvolutionClientFromConfig()
+    const { data: vendedor } = await supabase
+      .from("vendedores")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .single()
+
+    const evolution = await createEvolutionClientFromConfig(vendedor?.organization_id)
     const result    = await evolution.getConnectionState()
 
     return NextResponse.json({ state: result.instance?.state ?? "unknown" })

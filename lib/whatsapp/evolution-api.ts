@@ -318,15 +318,21 @@ export function createEvolutionClient(): EvolutionApiClient {
  * Reads `configuracoes_whatsapp` table using the service role client.
  * Falls back to env vars if no config exists in DB.
  */
-export async function createEvolutionClientFromConfig(): Promise<EvolutionApiClient> {
+export async function createEvolutionClientFromConfig(
+  organizationId?: string
+): Promise<EvolutionApiClient> {
   const { createServiceClient } = await import("@/lib/supabase/server")
   const supabase = createServiceClient()
 
-  const { data: config } = await supabase
+  let query = supabase
     .from("configuracoes_whatsapp")
     .select("evolution_api_url, evolution_api_key, instance_name")
-    .limit(1)
-    .single()
+
+  if (organizationId) {
+    query = query.eq("organization_id", organizationId)
+  }
+
+  const { data: config } = await query.limit(1).single()
 
   if (config?.evolution_api_url && config?.evolution_api_key && config?.instance_name) {
     return new EvolutionApiClient(

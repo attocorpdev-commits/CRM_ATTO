@@ -14,7 +14,7 @@ export async function GET() {
     // Only admins can get the QR code
     const { data: vendedor } = await supabase
       .from("vendedores")
-      .select("role")
+      .select("role, organization_id")
       .eq("user_id", user.id)
       .single()
 
@@ -22,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const evolution = await createEvolutionClientFromConfig()
+    const evolution = await createEvolutionClientFromConfig(vendedor?.organization_id)
     const result    = await evolution.fetchQRCode()
 
     // When instance is already connected, Evolution API returns { instance: { state: "open" } }
