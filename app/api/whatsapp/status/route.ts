@@ -16,7 +16,7 @@ export async function GET() {
       .eq("user_id", user.id)
       .single()
 
-    const evolution = await createEvolutionClientFromConfig(vendedor?.organization_id)
+    const evolution = await createEvolutionClientFromConfig(vendedor?.organization_id ?? undefined)
     const result    = await evolution.getConnectionState()
 
     return NextResponse.json({ state: result.instance?.state ?? "unknown" })
