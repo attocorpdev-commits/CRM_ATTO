@@ -20,6 +20,7 @@ export default async function DisparosPage() {
   const { data: disparos } = await supabase
     .from("disparos")
     .select("*")
+    .eq("vendedor_id", vendedor.id)
     .order("created_at", { ascending: false })
     .limit(50)
 

@@ -57,7 +57,7 @@ export default async function RelatoriosPage() {
     // Seller performance
     supabase
       .from("vendedores")
-      .select("id, nome, conversas_ativas, capacidade_maxima, status")
+      .select("id, nome, conversas_ativas, status")
       .order("nome"),
     // Messages per day (last 30 days)
     supabase
@@ -95,8 +95,8 @@ export default async function RelatoriosPage() {
     : "0"
 
   const STAGE_LABELS: Record<string, string> = {
-    novo: "Novo", contatado: "Contatado", qualificado: "Qualificado",
-    proposta: "Proposta", fechado: "Fechado",
+    novo: "Novo Contato", contatado: "Em Atendimento", qualificado: "Orçamento",
+    proposta: "Contrato", fechado: "Concluído",
   }
 
   return (
@@ -144,7 +144,7 @@ export default async function RelatoriosPage() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
               <BarChart3 className="h-3.5 w-3.5" />
-              Deals fechados
+              Atendimentos concluídos
             </div>
             <p className="text-2xl font-bold">{fechadas}</p>
           </CardContent>
@@ -183,52 +183,33 @@ export default async function RelatoriosPage() {
       {/* Seller performance table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Desempenho por Vendedor</CardTitle>
-          <CardDescription>Capacidade e carga atual de cada vendedor</CardDescription>
+          <CardTitle className="text-base">Desempenho por Consultor</CardTitle>
+          <CardDescription>Carga atual de cada consultor</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Vendedor</TableHead>
+                <TableHead>Consultor</TableHead>
                 <TableHead className="text-right">Status</TableHead>
-                <TableHead className="text-right">Ativas</TableHead>
-                <TableHead className="text-right">Capacidade</TableHead>
-                <TableHead className="text-right">Carga</TableHead>
+                <TableHead className="text-right">Conversas ativas</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vendedoresStats?.map((v) => {
-                const loadPercent = v.capacidade_maxima > 0
-                  ? Math.round((v.conversas_ativas / v.capacidade_maxima) * 100)
-                  : 0
-                return (
-                  <TableRow key={v.id}>
-                    <TableCell className="font-medium">{v.nome}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant={v.status === "ativo" ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        {v.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{v.conversas_ativas}</TableCell>
-                    <TableCell className="text-right">{v.capacidade_maxima}</TableCell>
-                    <TableCell className="text-right">
-                      <span
-                        className={
-                          loadPercent >= 90 ? "text-destructive font-semibold" :
-                          loadPercent >= 70 ? "text-yellow-600 font-medium" :
-                          "text-green-600"
-                        }
-                      >
-                        {loadPercent}%
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
+              {vendedoresStats?.map((v) => (
+                <TableRow key={v.id}>
+                  <TableCell className="font-medium">{v.nome}</TableCell>
+                  <TableCell className="text-right">
+                    <Badge
+                      variant={v.status === "ativo" ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {v.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">{v.conversas_ativas}</TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>

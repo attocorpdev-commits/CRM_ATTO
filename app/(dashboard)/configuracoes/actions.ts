@@ -20,36 +20,53 @@ export async function saveConfigAction(
 
   if (!isAdminOrAbove((vendedor as { role?: string } | null)?.role)) return { error: "Acesso negado" }
 
+  const { data: vendedorFull } = await supabase
+    .from("vendedores")
+    .select("organization_id")
+    .eq("user_id", user!.id)
+    .single()
+
+  const organizationId = (vendedorFull as { organization_id?: string | null } | null)?.organization_id
+  if (!organizationId) return { error: "Organização não encontrada" }
+
   const n8nUrl = (formData.get("n8n_webhook_url") as string)?.trim() || null
+
+  // API credentials come from env vars — not exposed to the UI
+  const apiUrl = (process.env.EVOLUTION_API_URL ?? "").replace(/\/$/, "")
+  const apiKey = process.env.EVOLUTION_API_KEY ?? ""
 
   const payload = {
     nome_conta:        formData.get("nome_conta") as string,
-    evolution_api_url: (formData.get("evolution_api_url") as string).replace(/\/$/, ""),
-    evolution_api_key: formData.get("evolution_api_key") as string,
+    evolution_api_url: apiUrl,
+    evolution_api_key: apiKey,
     instance_name:     formData.get("instance_name") as string,
     n8n_webhook_url:   n8nUrl,
+    organization_id:   organizationId,
   }
 
-  if (!payload.nome_conta || !payload.evolution_api_url || !payload.evolution_api_key || !payload.instance_name) {
-    return { error: "Todos os campos são obrigatórios" }
+  if (!payload.nome_conta || !payload.instance_name) {
+    return { error: "Nome da conta e nome da instância são obrigatórios" }
+  }
+
+  if (!apiUrl || !apiKey) {
+    return { error: "Variáveis de ambiente EVOLUTION_API_URL ou EVOLUTION_API_KEY não configuradas no servidor" }
   }
 
   const serviceClient = createServiceClient()
+  // Busca config da organização atual (não usa LIMIT 1 global)
   const { data: existing } = await serviceClient
     .from("configuracoes_whatsapp")
     .select("id")
-    .limit(1)
+    .eq("organization_id", organizationId)
     .single()
 
   let error
   if (existing) {
-
     ;({ error } = await serviceClient
       .from("configuracoes_whatsapp")
       .update(payload)
       .eq("id", existing.id))
   } else {
-
     ;({ error } = await serviceClient
       .from("configuracoes_whatsapp")
       .insert(payload))
@@ -57,21 +74,52 @@ export async function saveConfigAction(
 
   if (error) return { error: error.message }
 
-  // Auto-create the instance in Evolution API
+  const client = new EvolutionApiClient(apiUrl, apiKey, payload.instance_name)
+
+  // Create instance (ignore 409 — already exists)
   try {
-    const client = new EvolutionApiClient(
-      payload.evolution_api_url,
-      payload.evolution_api_key,
-      payload.instance_name
-    )
     await client.createInstance(payload.instance_name)
   } catch (err) {
-    // Instance may already exist — ignore 409 conflict, surface other errors
     const msg = (err as Error).message ?? ""
     if (!msg.includes("409") && !msg.includes("already") && !msg.includes("exists")) {
       revalidatePath("/configuracoes")
       return { success: true, instanceError: msg }
     }
+  }
+
+  // Auto-register webhook
+  try {
+    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/whatsapp/webhook`
+    await client.setWebhook({
+      url:               webhookUrl,
+      webhook_by_events: false,
+      webhook_base64:    true,
+      events: [
+        "MESSAGES_UPSERT",
+        "MESSAGES_UPDATE",
+        "SEND_MESSAGE",
+        "CONNECTION_UPDATE",
+        "QRCODE_UPDATED",
+      ],
+    })
+
+    // Persist webhook URL in DB (scoped to the org that was just saved)
+    const { data: config } = await serviceClient
+      .from("configuracoes_whatsapp")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .single()
+
+    if (config) {
+      await serviceClient
+        .from("configuracoes_whatsapp")
+        .update({ webhook_url: webhookUrl })
+        .eq("id", config.id)
+    }
+  } catch (err) {
+    const msg = (err as Error).message ?? ""
+    revalidatePath("/configuracoes")
+    return { success: true, webhookError: msg }
   }
 
   revalidatePath("/configuracoes")
@@ -86,7 +134,7 @@ export async function registerWebhookAction() {
     await evolution.setWebhook({
       url:                webhookUrl,
       webhook_by_events:  false,
-      webhook_base64:     false,
+      webhook_base64:     true,
       events: [
         "MESSAGES_UPSERT",
         "MESSAGES_UPDATE",
@@ -96,16 +144,26 @@ export async function registerWebhookAction() {
       ],
     })
 
-    // Store the webhook URL in DB
-    const supabase = createServiceClient()
-    const { data: config } = await supabase
+    // Store the webhook URL in DB (scoped to current user's org)
+    const authSupabase = await createClient()
+    const { data: { user: authUser } } = await authSupabase.auth.getUser()
+    const { data: authVendedor } = await authSupabase
+      .from("vendedores")
+      .select("organization_id")
+      .eq("user_id", authUser!.id)
+      .single()
+    const authOrgId = (authVendedor as { organization_id?: string | null } | null)?.organization_id
+
+    const serviceSupabase = createServiceClient()
+    const configQuery = serviceSupabase
       .from("configuracoes_whatsapp")
       .select("id")
-      .limit(1)
-      .single()
+    const { data: config } = await (authOrgId
+      ? configQuery.eq("organization_id", authOrgId).single()
+      : configQuery.limit(1).single())
 
     if (config) {
-      await supabase
+      await serviceSupabase
         .from("configuracoes_whatsapp")
         .update({ webhook_url: webhookUrl })
         .eq("id", config.id)

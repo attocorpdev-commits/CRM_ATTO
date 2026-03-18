@@ -46,10 +46,6 @@ export function SellerCard({ vendedor }: SellerCardProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  const loadPercent = vendedor.capacidade_maxima > 0
-    ? Math.min(100, (vendedor.conversas_ativas / vendedor.capacidade_maxima) * 100)
-    : 0
-
   const initials = vendedor.nome
     .split(" ")
     .map((n) => n[0])
@@ -61,7 +57,7 @@ export function SellerCard({ vendedor }: SellerCardProps) {
     startTransition(async () => {
       const result = await toggleVendedorStatusAction(vendedor.id, vendedor.status)
       if (result.error) toast.error(result.error)
-      else toast.success(vendedor.status === "ativo" ? "Vendedor pausado" : "Vendedor ativado")
+      else toast.success(vendedor.status === "ativo" ? "Consultor pausado" : "Consultor ativado")
     })
   }
 
@@ -69,7 +65,7 @@ export function SellerCard({ vendedor }: SellerCardProps) {
     startTransition(async () => {
       const result = await deleteVendedorAction(vendedor.id)
       if (result.error) toast.error(result.error)
-      else toast.success("Vendedor desativado")
+      else toast.success("Consultor desativado")
     })
   }
 
@@ -99,7 +95,7 @@ export function SellerCard({ vendedor }: SellerCardProps) {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Editar vendedor</DialogTitle>
+                        <DialogTitle>Editar consultor</DialogTitle>
                       </DialogHeader>
                       <EditVendedorForm
                         vendedor={vendedor}
@@ -142,28 +138,9 @@ export function SellerCard({ vendedor }: SellerCardProps) {
           </Badge>
         </div>
 
-        {/* Capacity bar */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <MessageSquare className="h-3 w-3" />
-              <span>Conversas ativas</span>
-            </div>
-            <span className="font-medium text-foreground">
-              {vendedor.conversas_ativas} / {vendedor.capacidade_maxima}
-            </span>
-          </div>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className={cn(
-                "h-full rounded-full transition-all",
-                loadPercent >= 90 ? "bg-destructive" :
-                loadPercent >= 70 ? "bg-yellow-500" :
-                "bg-primary"
-              )}
-              style={{ width: `${loadPercent}%` }}
-            />
-          </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MessageSquare className="h-3 w-3" />
+          <span>{vendedor.conversas_ativas} conversa(s) ativa(s)</span>
         </div>
       </CardContent>
     </Card>
@@ -184,7 +161,7 @@ function EditVendedorForm({
       const result = await updateVendedorAction(vendedor.id, null, formData)
       if (result.error) toast.error(result.error)
       else {
-        toast.success("Vendedor atualizado")
+        toast.success("Consultor atualizado")
         onClose()
       }
     })
@@ -204,41 +181,28 @@ function EditVendedorForm({
         <Label htmlFor="edit-whatsapp">WhatsApp</Label>
         <Input id="edit-whatsapp" name="whatsapp_number" defaultValue={vendedor.whatsapp_number ?? ""} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select name="status" defaultValue={vendedor.status}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ativo">Ativo</SelectItem>
-              <SelectItem value="pausado">Pausado</SelectItem>
-              <SelectItem value="inativo">Inativo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="edit-capacidade">Capacidade máx.</Label>
-          <Input
-            id="edit-capacidade"
-            name="capacidade_maxima"
-            type="number"
-            min={1}
-            max={100}
-            defaultValue={vendedor.capacidade_maxima}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label>Status</Label>
+        <Select name="status" defaultValue={vendedor.status}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ativo">Ativo</SelectItem>
+            <SelectItem value="pausado">Pausado</SelectItem>
+            <SelectItem value="inativo">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
-        <Label>Role</Label>
+        <Label>Perfil de acesso</Label>
         <Select name="role" defaultValue={vendedor.role}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="vendedor">Vendedor</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="vendedor">Consultor</SelectItem>
+            <SelectItem value="admin">Administrador</SelectItem>
           </SelectContent>
         </Select>
       </div>

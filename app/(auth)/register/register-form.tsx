@@ -44,6 +44,17 @@ export function RegisterForm() {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="empresa">Nome da empresa</Label>
+            <Input
+              id="empresa"
+              name="empresa"
+              type="text"
+              placeholder="Minha Empresa Ltda"
+              required
+              autoComplete="organization"
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
             <Input
               id="email"

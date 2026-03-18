@@ -5,6 +5,7 @@ import { distributeConversation } from "@/lib/distribution/conversation-distribu
 import { formatPhoneNumber, isGroupJid } from "@/lib/utils"
 import {
   EvolutionApiClient,
+  createEvolutionClientFromConfig,
   type EvolutionWebhookPayload,
 } from "@/lib/whatsapp/evolution-api"
 
@@ -60,13 +61,23 @@ export async function POST(req: NextRequest) {
   // Use a dummy client to avoid DB lookup on every webhook event.
   const evolution = new EvolutionApiClient("", "", "")
 
-  // Forward to n8n webhook (fire-and-forget, never blocks CRM processing)
+  // Identificar a organização pelo instance_name do payload
+  // Isso escopa TODAS as operações subsequentes à organização correta
   const { data: configRow } = await supabase
     .from("configuracoes_whatsapp")
-    .select("n8n_webhook_url")
-    .limit(1)
+    .select("organization_id, n8n_webhook_url")
+    .eq("instance_name", payload.instance)
     .single()
 
+  const organizationId = configRow?.organization_id ?? null
+
+  if (!organizationId) {
+    console.warn(`[Webhook] Nenhuma org encontrada para instance_name=${payload.instance}`)
+    // Aceita o webhook sem processar para não causar retry storm na Evolution API
+    return NextResponse.json({ ok: true })
+  }
+
+  // Forward to n8n webhook (fire-and-forget, never blocks CRM processing)
   if (configRow?.n8n_webhook_url) {
     fetch(configRow.n8n_webhook_url, {
       method: "POST",
@@ -107,6 +118,20 @@ export async function POST(req: NextRequest) {
         }
         const displayText = content ?? (media ? MEDIA_LABELS[media.type] ?? "[m\u00eddia]" : null)
 
+        // Fetch durable base64 for media (WhatsApp URLs expire quickly)
+        if (media && !media.base64) {
+          try {
+            const realEvolution = await createEvolutionClientFromConfig()
+            const base64 = await realEvolution.getBase64FromMediaMessage(key)
+            if (base64) {
+              media.base64 = base64
+              delete media.url
+            }
+          } catch (err) {
+            console.error("[Webhook] Failed to fetch media base64:", err)
+          }
+        }
+
         // Idempotency check: skip if we already processed this message ID
         const { data: existingMsg } = await supabase
           .from("mensagens_whatsapp")
@@ -116,11 +141,12 @@ export async function POST(req: NextRequest) {
 
         if (existingMsg) break
 
-        // Find or create the conversation
+        // Find or create the conversation (scoped to this organization)
         let { data: conversa } = await supabase
           .from("conversas_whatsapp")
           .select("id, vendedor_id, status, unread_count")
           .eq("numero_cliente", phoneNumber)
+          .eq("organization_id", organizationId)
           .in("status", ["ativa", "queued"])
           .single()
 
@@ -138,6 +164,7 @@ export async function POST(req: NextRequest) {
               ultima_mensagem:      displayText,
               ultima_mensagem_time: msgTimestamp,
               unread_count:         1,
+              organization_id:      organizationId,
             })
             .select()
             .single()
@@ -149,6 +176,7 @@ export async function POST(req: NextRequest) {
               .from("conversas_whatsapp")
               .select("id, vendedor_id, status, unread_count")
               .eq("numero_cliente", phoneNumber)
+              .eq("organization_id", organizationId)
               .in("status", ["ativa", "queued"])
               .single()
 
@@ -156,9 +184,9 @@ export async function POST(req: NextRequest) {
           } else {
             conversa = newConversa
 
-            // Distribute to available seller
+            // Distribute to available seller within the same organization
             if (conversa) {
-              await distributeConversation(supabase, conversa.id)
+              await distributeConversation(supabase, conversa.id, organizationId)
             }
           }
         } else {

@@ -36,7 +36,7 @@ export function CreateSellerForm({ onSuccess }: CreateSellerFormProps) {
       <div className="space-y-4">
         <div className="rounded-md border p-4 bg-green-50 dark:bg-green-950/30">
           <p className="text-sm font-medium text-green-800 dark:text-green-200">
-            Vendedor criado com sucesso!
+            Consultor criado com sucesso!
           </p>
           <div className="mt-3 space-y-3">
             <div>
@@ -59,7 +59,7 @@ export function CreateSellerForm({ onSuccess }: CreateSellerFormProps) {
               </div>
             </div>
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              Esta senha é exibida apenas uma vez. Compartilhe com o vendedor.
+              Esta senha é exibida apenas uma vez. Compartilhe com o consultor.
             </p>
           </div>
         </div>
@@ -84,23 +84,17 @@ export function CreateSellerForm({ onSuccess }: CreateSellerFormProps) {
         <Label htmlFor="whatsapp_number">WhatsApp (opcional)</Label>
         <Input id="whatsapp_number" name="whatsapp_number" placeholder="+55 11 99999-9999" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="capacidade_maxima">Capacidade máxima</Label>
-          <Input name="capacidade_maxima" type="number" min={1} max={100} defaultValue={10} />
-        </div>
-        <div className="space-y-2">
-          <Label>Role</Label>
-          <Select name="role" defaultValue="vendedor">
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="vendedor">Vendedor</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-2">
+        <Label>Perfil de acesso</Label>
+        <Select name="role" defaultValue="admin">
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="vendedor">Consultor</SelectItem>
+            <SelectItem value="admin">Administrador</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label>Permissões de acesso</Label>
@@ -130,7 +124,7 @@ export function CreateSellerForm({ onSuccess }: CreateSellerFormProps) {
         <p className="text-sm text-destructive">{state.error}</p>
       )}
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Criando..." : "Criar vendedor"}
+        {isPending ? "Criando..." : "Criar consultor"}
       </Button>
     </form>
   )

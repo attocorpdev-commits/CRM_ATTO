@@ -10,7 +10,7 @@ const vendedorSchema = z.object({
   email:             z.string().email(),
   whatsapp_number:   z.string().optional(),
   status:            z.enum(["ativo", "inativo", "pausado"]).default("ativo"),
-  role:              z.enum(["superadmin", "admin", "vendedor"]).default("vendedor"),
+  role:              z.enum(["superadmin", "admin", "vendedor"]).default("admin"),
   capacidade_maxima: z.coerce.number().min(1).max(100).default(10),
   permissions:       z.array(z.string()).default(["conversas"]),
 })
@@ -33,7 +33,7 @@ export async function createVendedorAction(
     email:             formData.get("email"),
     whatsapp_number:   formData.get("whatsapp_number") || undefined,
     status:            formData.get("status") || "ativo",
-    role:              formData.get("role") || "vendedor",
+    role:              formData.get("role") || "admin",
     capacidade_maxima: formData.get("capacidade_maxima") || 10,
     permissions,
   })
@@ -44,9 +44,18 @@ export async function createVendedorAction(
 
   // 1. Insert vendedor row (user_id = NULL for now)
   const supabase = await createClient()
+
+  // Fetch admin's organization_id so new vendor inherits the same org
+  const { data: { user: adminUser } } = await supabase.auth.getUser()
+  const { data: adminVendedor } = await supabase
+    .from("vendedores")
+    .select("organization_id")
+    .eq("user_id", adminUser!.id)
+    .single()
+
   const { data: vendedor, error: insertError } = await supabase
     .from("vendedores")
-    .insert(parsed.data)
+    .insert({ ...parsed.data, organization_id: adminVendedor?.organization_id ?? null })
     .select("id")
     .single()
 
@@ -66,6 +75,7 @@ export async function createVendedorAction(
     user_metadata: {
       full_name: parsed.data.nome,
       role: parsed.data.role,
+      organization_id: adminVendedor?.organization_id ?? null,
     },
   })
 
@@ -99,7 +109,7 @@ export async function updateVendedorAction(
     email:             formData.get("email"),
     whatsapp_number:   formData.get("whatsapp_number") || undefined,
     status:            formData.get("status") || "ativo",
-    role:              formData.get("role") || "vendedor",
+    role:              formData.get("role") || "admin",
     capacidade_maxima: formData.get("capacidade_maxima") || 10,
   })
 

@@ -41,22 +41,22 @@ export default async function VendedoresPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6" />
-            Vendedores
+            Consultores
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {vendedores?.length ?? 0} vendedor(es) cadastrado(s)
+            {vendedores?.length ?? 0} consultor(es) cadastrado(s)
           </p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Novo vendedor
+              Novo consultor
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Adicionar vendedor</DialogTitle>
+              <DialogTitle>Adicionar consultor</DialogTitle>
             </DialogHeader>
             <CreateSellerForm />
           </DialogContent>
@@ -66,8 +66,8 @@ export default async function VendedoresPage() {
       {!vendedores || vendedores.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">Nenhum vendedor cadastrado</p>
-          <p className="text-sm">Clique em &quot;Novo vendedor&quot; para começar</p>
+          <p className="font-medium">Nenhum consultor cadastrado</p>
+          <p className="text-sm">Clique em &quot;Novo consultor&quot; para começar</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

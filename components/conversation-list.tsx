@@ -1,10 +1,8 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useConversations } from "@/hooks/use-conversations"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -22,6 +20,19 @@ interface ConversationListProps {
   initialConversas?: ConversaComVendedor[]
 }
 
+const AVATAR_GRADIENTS = [
+  "from-blue-500 to-indigo-700",
+  "from-slate-500 to-blue-700",
+  "from-indigo-400 to-blue-600",
+  "from-sky-500 to-cyan-700",
+  "from-blue-400 to-slate-600",
+]
+
+function getAvatarGradient(name: string) {
+  const sum = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  return AVATAR_GRADIENTS[sum % AVATAR_GRADIENTS.length]
+}
+
 export function ConversationList({ vendedorId, initialConversas = [] }: ConversationListProps) {
   const [search, setSearch]         = useState("")
   const [activeTab, setActiveTab]   = useState<TabValue>("all")
@@ -29,7 +40,6 @@ export function ConversationList({ vendedorId, initialConversas = [] }: Conversa
 
   const { conversas, loading } = useConversations({ vendedorId })
 
-  // Use realtime data or fall back to server-side initial data
   const allConversas = conversas.length > 0 ? conversas : initialConversas
 
   const filtered = useMemo(() => {
@@ -57,32 +67,32 @@ export function ConversationList({ vendedorId, initialConversas = [] }: Conversa
   }, [allConversas])
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Search */}
-      <div className="p-4 border-b space-y-3">
-        <h1 className="text-xl font-semibold">Conversas</h1>
+    <div className="flex flex-col h-full bg-background">
+      {/* Header + Search */}
+      <div className="p-4 border-b space-y-3 bg-card/50">
+        <h1 className="text-lg font-bold tracking-tight">Conversas</h1>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
           <Input
             placeholder="Buscar por nome ou número..."
-            className="pl-9"
+            className="pl-9 bg-background border-border/60 focus-visible:ring-primary/30 h-9 text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
-          <TabsList className="w-full">
-            <TabsTrigger value="all" className="flex-1">
-              Todas ({allConversas.length})
+          <TabsList className="w-full h-8 bg-muted/50">
+            <TabsTrigger value="all" className="flex-1 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Todas <span className="ml-1 text-muted-foreground font-normal">({allConversas.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="ativa" className="flex-1">
-              Ativas ({counts.ativa})
+            <TabsTrigger value="ativa" className="flex-1 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Ativas <span className="ml-1 text-muted-foreground font-normal">({counts.ativa})</span>
             </TabsTrigger>
-            <TabsTrigger value="queued" className="flex-1">
-              Fila ({counts.queued})
+            <TabsTrigger value="queued" className="flex-1 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Fila <span className="ml-1 text-muted-foreground font-normal">({counts.queued})</span>
             </TabsTrigger>
-            <TabsTrigger value="arquivada" className="flex-1">
-              Arquiv. ({counts.arquivada})
+            <TabsTrigger value="arquivada" className="flex-1 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Arquiv. <span className="ml-1 text-muted-foreground font-normal">({counts.arquivada})</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -94,12 +104,14 @@ export function ConversationList({ vendedorId, initialConversas = [] }: Conversa
           <ConversationListSkeleton />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mb-3 opacity-30" />
-            <p className="font-medium">Nenhuma conversa encontrada</p>
-            <p className="text-sm">Ajuste os filtros ou aguarde novas mensagens</p>
+            <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-3">
+              <MessageSquare className="h-7 w-7 opacity-30" />
+            </div>
+            <p className="text-sm font-medium">Nenhuma conversa encontrada</p>
+            <p className="text-xs mt-1">Ajuste os filtros ou aguarde novas mensagens</p>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-border/50">
             {filtered.map((conversa) => (
               <ConversationRow
                 key={conversa.id}
@@ -121,25 +133,36 @@ function ConversationRow({
   conversa: ConversaComVendedor
   onClick: () => void
 }) {
-  const initials = (conversa.nome_cliente ?? conversa.numero_cliente)
+  const displayName = conversa.nome_cliente ?? conversa.numero_cliente
+  const initials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2)
+  const gradient = getAvatarGradient(displayName)
+  const hasUnread = (conversa.unread_count ?? 0) > 0
 
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors text-left"
+      className={cn(
+        "w-full flex items-start gap-3 px-4 py-3.5 hover:bg-accent/40 transition-colors text-left relative",
+        hasUnread && "border-l-2 border-primary bg-primary/[0.02]"
+      )}
     >
       <div className="relative shrink-0">
         <Avatar className="h-10 w-10">
-          <AvatarFallback className="text-sm">{initials}</AvatarFallback>
+          <AvatarFallback className={cn(
+            "text-sm font-semibold text-white bg-gradient-to-br",
+            gradient
+          )}>
+            {initials}
+          </AvatarFallback>
         </Avatar>
-        {(conversa.unread_count ?? 0) > 0 && (
-          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-            {conversa.unread_count > 9 ? "9+" : conversa.unread_count}
+        {hasUnread && (
+          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center shadow-sm">
+            {conversa.unread_count! > 9 ? "9+" : conversa.unread_count}
           </span>
         )}
       </div>
@@ -147,11 +170,14 @@ function ConversationRow({
         <div className="flex items-center justify-between gap-2">
           <p className={cn(
             "text-sm truncate",
-            (conversa.unread_count ?? 0) > 0 ? "font-semibold" : "font-medium"
+            hasUnread ? "font-semibold text-foreground" : "font-medium text-foreground/90"
           )}>
-            {conversa.nome_cliente ?? conversa.numero_cliente}
+            {displayName}
           </p>
-          <span className="text-xs text-muted-foreground shrink-0">
+          <span className={cn(
+            "text-[11px] shrink-0",
+            hasUnread ? "text-primary font-semibold" : "text-muted-foreground"
+          )}>
             {conversa.ultima_mensagem_time
               ? formatRelativeTime(conversa.ultima_mensagem_time)
               : ""}
@@ -159,14 +185,14 @@ function ConversationRow({
         </div>
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <p className={cn(
-            "text-xs truncate text-muted-foreground",
-            (conversa.unread_count ?? 0) > 0 && "text-foreground font-medium"
+            "text-xs truncate",
+            hasUnread ? "text-foreground/80 font-medium" : "text-muted-foreground"
           )}>
             {conversa.ultima_mensagem ?? "Sem mensagens"}
           </p>
           <span
             className={cn(
-              "text-[10px] px-1.5 py-0.5 rounded-full shrink-0",
+              "text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-medium",
               STAGE_COLORS[conversa.estagio] ?? "bg-muted text-muted-foreground"
             )}
           >
@@ -174,7 +200,7 @@ function ConversationRow({
           </span>
         </div>
         {conversa.vendedores && (
-          <p className="text-[11px] text-muted-foreground mt-0.5">
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
             {conversa.vendedores.nome}
           </p>
         )}
@@ -185,16 +211,16 @@ function ConversationRow({
 
 function ConversationListSkeleton() {
   return (
-    <div className="divide-y">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-start gap-3 p-4">
+    <div className="divide-y divide-border/50">
+      {Array.from({ length: 7 }).map((_, i) => (
+        <div key={i} className="flex items-start gap-3 px-4 py-3.5">
           <Skeleton className="h-10 w-10 rounded-full shrink-0" />
           <div className="flex-1 space-y-2">
-            <div className="flex justify-between">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-12" />
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-3 w-10" />
             </div>
-            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-3 w-44" />
           </div>
         </div>
       ))}

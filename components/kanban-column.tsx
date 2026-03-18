@@ -3,7 +3,7 @@
 import { useDroppable } from "@dnd-kit/core"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { STAGE_LABELS, STAGE_HEADER_COLORS } from "@/lib/kanban-constants"
+import { STAGE_LABELS, STAGE_HEADER_COLORS, STAGE_EMPTY_MESSAGES } from "@/lib/kanban-constants"
 import { KanbanCard } from "./kanban-card"
 import { cn } from "@/lib/utils"
 import type { ConversaComVendedor, ConversaEstagio } from "@/types"
@@ -39,12 +39,15 @@ export function KanbanColumn({ stage, conversas, onCardClick }: KanbanColumnProp
             <KanbanCard
               key={conversa.id}
               conversa={conversa}
+              stage={stage}
               onClick={() => onCardClick(conversa.id)}
             />
           ))}
           {conversas.length === 0 && (
-            <div className="text-center text-xs text-muted-foreground py-8">
-              Nenhuma conversa
+            <div className="border-2 border-dashed border-muted-foreground/20 rounded-md py-8 px-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                {STAGE_EMPTY_MESSAGES[stage]}
+              </p>
             </div>
           )}
         </div>

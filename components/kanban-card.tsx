@@ -6,15 +6,17 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatRelativeTime } from "@/lib/utils"
-import type { ConversaComVendedor } from "@/types"
+import { STAGE_AVATAR_COLORS, STAGE_BORDER_COLORS } from "@/lib/kanban-constants"
+import type { ConversaComVendedor, ConversaEstagio } from "@/types"
 
 interface KanbanCardProps {
   conversa: ConversaComVendedor
+  stage: ConversaEstagio
   onClick?: () => void
   isDragging?: boolean
 }
 
-export function KanbanCard({ conversa, onClick, isDragging = false }: KanbanCardProps) {
+export function KanbanCard({ conversa, stage, onClick, isDragging = false }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: conversa.id,
   })
@@ -38,7 +40,8 @@ export function KanbanCard({ conversa, onClick, isDragging = false }: KanbanCard
       {...listeners}
       {...attributes}
       className={cn(
-        "cursor-grab active:cursor-grabbing transition-shadow",
+        "cursor-grab active:cursor-grabbing transition-shadow border-l-4",
+        STAGE_BORDER_COLORS[stage],
         isDragging && "shadow-lg opacity-90 rotate-2",
         !isDragging && "hover:shadow-md"
       )}
@@ -47,11 +50,20 @@ export function KanbanCard({ conversa, onClick, isDragging = false }: KanbanCard
       <CardContent className="p-3 space-y-2">
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7 shrink-0">
-            <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+            <AvatarFallback className={cn("text-[10px]", STAGE_AVATAR_COLORS[stage])}>
+              {initials}
+            </AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium truncate flex-1">
-            {displayName}
-          </span>
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-medium truncate block">
+              {displayName}
+            </span>
+            {conversa.nome_cliente && conversa.nome_cliente !== conversa.numero_cliente && (
+              <span className="text-[11px] text-muted-foreground truncate block">
+                {conversa.numero_cliente}
+              </span>
+            )}
+          </div>
           {(conversa.unread_count ?? 0) > 0 && (
             <Badge variant="default" className="text-[10px] h-4 px-1 shrink-0">
               {conversa.unread_count! > 9 ? "9+" : conversa.unread_count}

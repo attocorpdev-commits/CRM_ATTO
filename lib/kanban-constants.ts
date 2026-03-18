@@ -9,11 +9,11 @@ export const STAGES: ConversaEstagio[] = [
 ]
 
 export const STAGE_LABELS: Record<ConversaEstagio, string> = {
-  novo: "Novo",
-  contatado: "Contatado",
-  qualificado: "Qualificado",
-  proposta: "Proposta",
-  fechado: "Fechado",
+  novo: "Novo Contato",
+  contatado: "Em Atendimento",
+  qualificado: "Orçamento",
+  proposta: "Contrato",
+  fechado: "Concluído",
 }
 
 export const STAGE_COLORS: Record<ConversaEstagio, string> = {
@@ -30,4 +30,28 @@ export const STAGE_HEADER_COLORS: Record<ConversaEstagio, string> = {
   qualificado: "border-t-purple-500",
   proposta: "border-t-orange-500",
   fechado: "border-t-green-500",
+}
+
+export const STAGE_AVATAR_COLORS: Record<ConversaEstagio, string> = {
+  novo:        "bg-blue-500 text-white",
+  contatado:   "bg-yellow-500 text-white",
+  qualificado: "bg-purple-500 text-white",
+  proposta:    "bg-orange-500 text-white",
+  fechado:     "bg-green-500 text-white",
+}
+
+export const STAGE_BORDER_COLORS: Record<ConversaEstagio, string> = {
+  novo:        "border-l-blue-500",
+  contatado:   "border-l-yellow-500",
+  qualificado: "border-l-purple-500",
+  proposta:    "border-l-orange-500",
+  fechado:     "border-l-green-500",
+}
+
+export const STAGE_EMPTY_MESSAGES: Record<ConversaEstagio, string> = {
+  novo:        "Sem novos contatos",
+  contatado:   "Nenhum em atendimento",
+  qualificado: "Nenhum orçamento",
+  proposta:    "Nenhum contrato",
+  fechado:     "Nenhum concluído",
 }

@@ -3,19 +3,10 @@ import { redirect } from "next/navigation"
 import { isAdminOrAbove } from "@/lib/roles"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Settings, Wifi, WifiOff, Webhook } from "lucide-react"
+import { Settings, Wifi, WifiOff } from "lucide-react"
 import { WhatsAppConnectDialog } from "./whatsapp-connect-dialog"
 import { ConfigForm } from "./config-form"
-import { registerWebhookAction } from "./actions"
 import type { Configuracao } from "@/types"
-
-async function handleRegisterWebhook() {
-  "use server"
-  await registerWebhookAction()
-}
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
@@ -91,52 +82,13 @@ export default async function ConfiguracoesPage() {
       {/* Evolution API Configuration — Client Component for useActionState feedback */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Configuração da Evolution API</CardTitle>
+          <CardTitle className="text-base">Configuração da instância</CardTitle>
           <CardDescription>
-            Insira as credenciais da sua instância Evolution API auto-hospedada
+            Defina o nome da conta e da instância. O webhook será registrado automaticamente ao salvar.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ConfigForm config={config as Configuracao | null} />
-        </CardContent>
-      </Card>
-
-      {/* Webhook Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Webhook className="h-4 w-4" />
-            Configuração do Webhook
-          </CardTitle>
-          <CardDescription>
-            Registre o webhook para receber mensagens em tempo real
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {config?.webhook_url && (
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Webhook URL atual</Label>
-              <div className="font-mono text-xs bg-muted p-2 rounded break-all">
-                {config.webhook_url}
-              </div>
-            </div>
-          )}
-          <Separator />
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Clique em registrar para configurar automaticamente o webhook
-              na sua instância Evolution API. A URL será:
-            </p>
-            <div className="font-mono text-xs bg-muted p-2 rounded break-all text-muted-foreground">
-              {process.env.NEXT_PUBLIC_APP_URL ?? "https://seudominio.com"}/api/whatsapp/webhook
-            </div>
-          </div>
-          <form action={handleRegisterWebhook}>
-            <Button type="submit" variant="outline" className="w-full gap-2" disabled={!config}>
-              <Webhook className="h-4 w-4" />
-              Registrar webhook na Evolution API
-            </Button>
-          </form>
         </CardContent>
       </Card>
     </div>

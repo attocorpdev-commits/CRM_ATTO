@@ -130,7 +130,7 @@ export function MessageInput({ onSend, onSendMedia, disabled = false }: MessageI
   const canSend = selectedFile || text.trim()
 
   return (
-    <div className="relative border-t bg-background p-3">
+    <div className="relative border-t bg-card px-3 pt-3 pb-2">
       {showEmoji && (
         <div className="absolute bottom-full right-0 mb-2 z-10">
           <EmojiPicker onEmojiClick={handleEmojiClick} />
@@ -139,11 +139,11 @@ export function MessageInput({ onSend, onSendMedia, disabled = false }: MessageI
 
       {/* File preview */}
       {selectedFile && (
-        <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-lg">
+        <div className="flex items-center gap-2 mb-2.5 p-2.5 bg-muted/60 rounded-xl border border-border/40">
           {filePreview ? (
-            <img src={filePreview} alt="Preview" className="h-16 w-16 rounded object-cover" />
+            <img src={filePreview} alt="Preview" className="h-14 w-14 rounded-lg object-cover" />
           ) : (
-            <div className="h-12 w-12 rounded bg-background flex items-center justify-center">
+            <div className="h-12 w-12 rounded-lg bg-background flex items-center justify-center border border-border/40">
               {FILE_ICONS[getFileCategory(selectedFile.type)] ?? <FileText className="h-5 w-5" />}
             </div>
           )}
@@ -153,32 +153,32 @@ export function MessageInput({ onSend, onSendMedia, disabled = false }: MessageI
               {(selectedFile.size / 1024).toFixed(0)} KB
             </p>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={clearFile}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 hover:bg-destructive/10 hover:text-destructive" onClick={clearFile}>
             <X className="h-4 w-4" />
           </Button>
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-1.5">
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="shrink-0 h-9 w-9"
+          className="shrink-0 h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
           onClick={() => setShowEmoji((v) => !v)}
           disabled={disabled}
         >
-          <Smile className={cn("h-5 w-5", showEmoji && "text-primary")} />
+          <Smile className={cn("h-5 w-5", showEmoji ? "text-primary" : "text-muted-foreground")} />
         </Button>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="shrink-0 h-9 w-9"
+          className="shrink-0 h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || sending}
         >
-          <Paperclip className="h-5 w-5" />
+          <Paperclip className="h-5 w-5 text-muted-foreground" />
         </Button>
         <input
           ref={fileInputRef}
@@ -193,21 +193,21 @@ export function MessageInput({ onSend, onSendMedia, disabled = false }: MessageI
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={selectedFile ? "Adicione uma legenda (opcional)..." : "Digite uma mensagem..."}
-          className="min-h-[42px] max-h-32 resize-none flex-1"
+          className="min-h-[42px] max-h-32 resize-none flex-1 rounded-xl bg-muted/50 border-border/50 focus-visible:ring-primary/30 focus-visible:bg-background transition-colors"
           rows={1}
           disabled={disabled || sending}
         />
         <Button
           type="button"
           size="icon"
-          className="shrink-0 h-9 w-9"
+          className="shrink-0 h-9 w-9 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-sm transition-all"
           onClick={handleSend}
           disabled={!canSend || sending || disabled}
         >
           <Send className="h-4 w-4" />
         </Button>
       </div>
-      <p className="text-[10px] text-muted-foreground text-right mt-1 pr-1">
+      <p className="text-[10px] text-muted-foreground/60 text-right mt-1.5 pr-1">
         Shift+Enter para nova linha
       </p>
     </div>

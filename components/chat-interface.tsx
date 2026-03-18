@@ -38,8 +38,9 @@ import {
   XCircle,
   UserRoundPlus,
   Download,
+  MessageSquare,
 } from "lucide-react"
-import { cn, formatRelativeTime } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { Anexo, Conversa, Mensagem } from "@/types"
 import {
@@ -166,29 +167,31 @@ export function ChatInterface({ conversa, initialMensagens, vendedores }: ChatIn
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)]">
       {/* Header */}
-      <div className="flex items-center gap-3 p-3 border-b bg-card shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3.5 border-b bg-card shadow-sm shrink-0">
         <Button
           variant="ghost"
           size="icon"
-          className="shrink-0 md:hidden"
+          className="shrink-0 md:hidden h-8 w-8"
           onClick={() => router.push("/conversas")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <Avatar className="h-9 w-9 shrink-0">
-          <AvatarFallback className="text-sm">{initials}</AvatarFallback>
+        <Avatar className="h-10 w-10 shrink-0">
+          <AvatarFallback className="text-sm font-semibold text-white bg-gradient-to-br from-blue-500 to-indigo-700">
+            {initials}
+          </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-semibold text-sm truncate">
               {currentConversa.nome_cliente ?? currentConversa.numero_cliente}
             </p>
-            <Badge variant="outline" className="text-[10px] h-4 px-1 shrink-0">
+            <Badge variant="outline" className="text-[10px] h-4 px-1.5 shrink-0 border-border/60">
               {currentConversa.status}
             </Badge>
           </div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-3 w-3 text-muted-foreground" />
+          <div className="flex items-center gap-1.5">
+            <Phone className="h-3 w-3 text-muted-foreground/60" />
             <p className="text-xs text-muted-foreground">{currentConversa.numero_cliente}</p>
           </div>
         </div>
@@ -275,40 +278,48 @@ export function ChatInterface({ conversa, initialMensagens, vendedores }: ChatIn
       </Dialog>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        {loading && displayMensagens.length === 0 ? (
-          <div className="flex justify-center py-8 text-muted-foreground text-sm">
-            Carregando mensagens...
-          </div>
-        ) : displayMensagens.length === 0 ? (
-          <div className="flex justify-center py-8 text-muted-foreground text-sm">
-            Nenhuma mensagem ainda
-          </div>
-        ) : (
-          <div className="space-y-2 pb-2">
-            {displayMensagens.map((msg, idx) => {
-              const prevMsg    = displayMensagens[idx - 1]
-              const showDate   = !prevMsg ||
-                new Date(msg.timestamp).toDateString() !==
-                new Date(prevMsg.timestamp).toDateString()
+      <ScrollArea className="flex-1 bg-muted/20">
+        <div className="p-4">
+          {loading && displayMensagens.length === 0 ? (
+            <div className="flex justify-center py-8 text-muted-foreground text-sm">
+              Carregando mensagens...
+            </div>
+          ) : displayMensagens.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <div className="h-14 w-14 rounded-2xl bg-background flex items-center justify-center mb-3 shadow-sm">
+                <MessageSquare className="h-7 w-7 opacity-30" />
+              </div>
+              <p className="text-sm font-medium">Nenhuma mensagem ainda</p>
+              <p className="text-xs mt-1">Inicie a conversa enviando uma mensagem</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5 pb-2">
+              {displayMensagens.map((msg, idx) => {
+                const prevMsg    = displayMensagens[idx - 1]
+                const showDate   = !prevMsg ||
+                  new Date(msg.timestamp).toDateString() !==
+                  new Date(prevMsg.timestamp).toDateString()
 
-              return (
-                <div key={msg.id}>
-                  {showDate && (
-                    <div className="flex justify-center my-3">
-                      <span className="text-[11px] bg-muted text-muted-foreground px-3 py-1 rounded-full">
-                        {format(new Date(msg.timestamp), "EEEE, d 'de' MMMM", { locale: ptBR })}
-                      </span>
-                    </div>
-                  )}
-                  <MessageBubble message={msg} />
-                </div>
-              )
-            })}
-            {/* Scroll anchor */}
-            <div ref={bottomRef} />
-          </div>
-        )}
+                return (
+                  <div key={msg.id}>
+                    {showDate && (
+                      <div className="flex items-center gap-3 my-4">
+                        <div className="flex-1 h-px bg-border/60" />
+                        <span className="text-[11px] font-medium bg-background text-muted-foreground px-3 py-1 rounded-full border border-border/60 shadow-sm">
+                          {format(new Date(msg.timestamp), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                        </span>
+                        <div className="flex-1 h-px bg-border/60" />
+                      </div>
+                    )}
+                    <MessageBubble message={msg} />
+                  </div>
+                )
+              })}
+              {/* Scroll anchor */}
+              <div ref={bottomRef} />
+            </div>
+          )}
+        </div>
       </ScrollArea>
 
       {/* Input */}
@@ -318,6 +329,24 @@ export function ChatInterface({ conversa, initialMensagens, vendedores }: ChatIn
         disabled={isArchived || isClosed}
       />
     </div>
+  )
+}
+
+function AudioPlayer({ src }: { src: string }) {
+  const [error, setError] = useState(false)
+
+  if (error) {
+    return <p className="italic opacity-70 text-xs">[audio indisponivel]</p>
+  }
+
+  return (
+    <audio
+      src={src}
+      controls
+      className="max-w-full min-w-[200px]"
+      preload="metadata"
+      onError={() => setError(true)}
+    />
   )
 }
 
@@ -358,9 +387,7 @@ function MediaContent({ anexo, isOutbound }: { anexo: Anexo; isOutbound: boolean
         </div>
       )
     case "audio":
-      return (
-        <audio src={src} controls className="max-w-full min-w-[200px]" preload="metadata" />
-      )
+      return <AudioPlayer src={src} />
     case "document":
       return (
         <a
@@ -416,28 +443,28 @@ function MessageBubble({ message }: { message: Mensagem }) {
     <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+          "max-w-[78%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm",
           isOutbound
             ? "bg-primary text-primary-foreground rounded-br-sm"
-            : "bg-muted text-foreground rounded-bl-sm"
+            : "bg-card text-foreground rounded-bl-sm border border-border/40"
         )}
       >
         {anexo ? (
           <MediaContent anexo={anexo} isOutbound={isOutbound} />
         ) : message.conteudo ? (
-          <p className="whitespace-pre-wrap break-words">{message.conteudo}</p>
+          <p className="whitespace-pre-wrap break-words leading-relaxed">{message.conteudo}</p>
         ) : (
           <p className="italic opacity-70">[mídia]</p>
         )}
         <div
           className={cn(
-            "flex items-center gap-1 mt-1",
+            "flex items-center gap-1 mt-1.5",
             isOutbound ? "justify-end" : "justify-start"
           )}
         >
           <span className={cn(
             "text-[10px]",
-            isOutbound ? "text-primary-foreground/70" : "text-muted-foreground"
+            isOutbound ? "text-primary-foreground/60" : "text-muted-foreground/70"
           )}>
             {time}
           </span>

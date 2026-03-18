@@ -117,6 +117,29 @@ export class EvolutionApiClient {
   }
 
   /**
+   * Download media as base64 from a message that was already received.
+   * Uses Evolution API's getBase64FromMediaMessage endpoint.
+   * Returns null on failure for graceful degradation.
+   */
+  async getBase64FromMediaMessage(messageKey: {
+    remoteJid: string
+    fromMe: boolean
+    id: string
+  }): Promise<string | null> {
+    try {
+      const result = await this.request<{ base64: string }>(
+        "POST",
+        `/chat/getBase64FromMediaMessage/${this.instance}`,
+        { message: { key: messageKey }, convertToMp4: false }
+      )
+      return result.base64 ?? null
+    } catch (err) {
+      console.error("[EvolutionAPI] getBase64FromMediaMessage failed:", err)
+      return null
+    }
+  }
+
+  /**
    * Configure the webhook for this instance.
    * Events: MESSAGES_UPSERT, MESSAGES_UPDATE, CONNECTION_UPDATE, etc.
    */

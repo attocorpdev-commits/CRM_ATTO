@@ -14,10 +14,38 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      organizacoes: {
+        Row: {
+          id: string
+          nome: string
+          slug: string
+          plano: "free" | "pro" | "enterprise"
+          status: "ativo" | "inativo" | "suspenso"
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          slug: string
+          plano?: "free" | "pro" | "enterprise"
+          status?: "ativo" | "inativo" | "suspenso"
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          slug?: string
+          plano?: "free" | "pro" | "enterprise"
+          status?: "ativo" | "inativo" | "suspenso"
+          created_at?: string
+        }
+        Relationships: []
+      }
       vendedores: {
         Row: {
           id: string
           user_id: string | null
+          organization_id: string | null
           nome: string
           email: string
           whatsapp_number: string | null
@@ -32,6 +60,7 @@ export interface Database {
         Insert: {
           id?: string
           user_id?: string | null
+          organization_id?: string | null
           nome: string
           email: string
           whatsapp_number?: string | null
@@ -46,6 +75,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string | null
+          organization_id?: string | null
           nome?: string
           email?: string
           whatsapp_number?: string | null
@@ -57,7 +87,15 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vendedores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       conversas_whatsapp: {
         Row: {
@@ -65,6 +103,7 @@ export interface Database {
           numero_cliente: string
           nome_cliente: string | null
           vendedor_id: string | null
+          organization_id: string | null
           status: "ativa" | "encerrada" | "arquivada" | "queued"
           estagio: "novo" | "contatado" | "qualificado" | "proposta" | "fechado"
           ultima_mensagem: string | null
@@ -79,6 +118,7 @@ export interface Database {
           numero_cliente: string
           nome_cliente?: string | null
           vendedor_id?: string | null
+          organization_id?: string | null
           status?: "ativa" | "encerrada" | "arquivada" | "queued"
           estagio?: "novo" | "contatado" | "qualificado" | "proposta" | "fechado"
           ultima_mensagem?: string | null
@@ -93,6 +133,7 @@ export interface Database {
           numero_cliente?: string
           nome_cliente?: string | null
           vendedor_id?: string | null
+          organization_id?: string | null
           status?: "ativa" | "encerrada" | "arquivada" | "queued"
           estagio?: "novo" | "contatado" | "qualificado" | "proposta" | "fechado"
           ultima_mensagem?: string | null
@@ -108,6 +149,13 @@ export interface Database {
             columns: ["vendedor_id"]
             isOneToOne: false
             referencedRelation: "vendedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_whatsapp_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
             referencedColumns: ["id"]
           }
         ]
@@ -156,6 +204,7 @@ export interface Database {
       configuracoes_whatsapp: {
         Row: {
           id: string
+          organization_id: string | null
           nome_conta: string
           evolution_api_url: string
           evolution_api_key: string
@@ -168,6 +217,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          organization_id?: string | null
           nome_conta: string
           evolution_api_url: string
           evolution_api_key: string
@@ -180,6 +230,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          organization_id?: string | null
           nome_conta?: string
           evolution_api_url?: string
           evolution_api_key?: string
@@ -190,12 +241,21 @@ export interface Database {
           n8n_webhook_url?: string | null
           created_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "configuracoes_whatsapp_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       disparos: {
         Row: {
           id: string
           vendedor_id: string
+          organization_id: string | null
           mensagem: string
           total_contatos: number
           enviados: number
@@ -211,6 +271,7 @@ export interface Database {
         Insert: {
           id?: string
           vendedor_id: string
+          organization_id?: string | null
           mensagem: string
           total_contatos?: number
           enviados?: number
@@ -226,6 +287,7 @@ export interface Database {
         Update: {
           id?: string
           vendedor_id?: string
+          organization_id?: string | null
           mensagem?: string
           total_contatos?: number
           enviados?: number
@@ -293,6 +355,7 @@ export interface Database {
         Row: {
           id: string
           vendedor_id: string
+          organization_id: string | null
           nome: string
           total_contatos: number
           created_at: string
@@ -301,6 +364,7 @@ export interface Database {
         Insert: {
           id?: string
           vendedor_id: string
+          organization_id?: string | null
           nome: string
           total_contatos?: number
           created_at?: string
@@ -309,6 +373,7 @@ export interface Database {
         Update: {
           id?: string
           vendedor_id?: string
+          organization_id?: string | null
           nome?: string
           total_contatos?: number
           created_at?: string
@@ -364,6 +429,10 @@ export interface Database {
         Returns: string
       }
       get_my_vendedor_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_my_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

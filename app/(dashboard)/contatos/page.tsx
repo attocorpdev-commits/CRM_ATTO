@@ -24,6 +24,7 @@ export default async function ContatosPage() {
   const { data: listas } = await supabase
     .from("listas_contatos")
     .select("*")
+    .eq("vendedor_id", vendedor.id)
     .order("created_at", { ascending: false })
 
   return (

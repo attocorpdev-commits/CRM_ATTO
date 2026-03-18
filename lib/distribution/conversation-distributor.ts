@@ -11,18 +11,22 @@ export interface DistributionResult {
  * Uses a Postgres RPC with FOR UPDATE SKIP LOCKED to prevent race conditions
  * when multiple webhook events arrive simultaneously.
  *
- * Algorithm: pick active seller with (conversas_ativas / capacidade_maxima) lowest.
- * If all sellers are at capacity, the conversation is placed in 'queued' status.
+ * Algorithm: pick active seller with lowest conversas_ativas (no capacity limit).
+ * If no active sellers exist, the conversation is placed in 'queued' status.
+ *
+ * organizationId: scopes seller lookup to the correct tenant.
  */
 export async function distributeConversation(
   supabase: SupabaseClient<Database>,
-  conversaId: string
+  conversaId: string,
+  organizationId: string
 ): Promise<DistributionResult> {
-  // Fetch active sellers ordered by load ratio (least loaded first)
+  // Fetch active sellers ordered by load (least loaded first), scoped to org
   const { data: sellers, error: fetchError } = await supabase
     .from("vendedores")
-    .select("id, conversas_ativas, capacidade_maxima")
+    .select("id, conversas_ativas")
     .eq("status", "ativo")
+    .eq("organization_id", organizationId)
     .order("conversas_ativas", { ascending: true })
 
   if (fetchError) {
@@ -39,10 +43,8 @@ export async function distributeConversation(
     return { vendedor_id: null, status: "queued" }
   }
 
-  // Try each seller in order of load ratio until one succeeds
+  // Try each seller in order of load until one succeeds
   for (const seller of sellers) {
-    if (seller.conversas_ativas >= seller.capacidade_maxima) continue
-
     const { error: rpcError } = await supabase.rpc("assign_conversation", {
       p_conversa_id: conversaId,
       p_vendedor_id: seller.id,
@@ -63,7 +65,7 @@ export async function distributeConversation(
     throw new Error(`Assignment RPC failed: ${rpcError.message}`)
   }
 
-  // All sellers at capacity — queue
+  // All sellers locked by concurrent requests — queue
   await supabase
     .from("conversas_whatsapp")
     .update({ status: "queued", vendedor_id: null })
